@@ -23,3 +23,8 @@ supabase/.temp
 # Scripts con credenciales (no subir)
 supabase/exec_schema.js
 supabase/verify.js
+
+# Root artifacts (testing)
+/package.json
+/package-lock.json
+/node_modules/
