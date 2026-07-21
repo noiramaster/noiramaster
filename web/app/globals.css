@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-noir-bg text-texto font-body antialiased;
+  }
+
+  ::selection {
+    @apply bg-violeta/40 text-texto;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-violeta;
+    outline-style: solid;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Radar Scanner Animation */
+.radar-container {
+  position: relative;
+  width: 280px;
+  height: 280px;
+}
+
+.radar-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(108, 76, 224, 0.3);
+}
+
+.radar-circle:nth-child(1) { inset: 10%; }
+.radar-circle:nth-child(2) { inset: 30%; }
+.radar-circle:nth-child(3) { inset: 50%; }
+.radar-circle:nth-child(4) { inset: 70%; }
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(57, 255, 136, 0.06) 0deg,
+    rgba(57, 255, 136, 0.12) 45deg,
+    rgba(57, 255, 136, 0.06) 90deg,
+    transparent 90deg
+  );
+  animation: radar-spin 3s linear infinite;
+}
+
+.radar-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #39FF88;
+  box-shadow: 0 0 8px rgba(57, 255, 136, 0.6), 0 0 20px rgba(57, 255, 136, 0.3);
+  opacity: 0;
+  animation: radar-dot-pulse 4s ease-in-out infinite;
+}
+
+.radar-dot:nth-child(6) { top: 25%; left: 60%; animation-delay: 0s; }
+.radar-dot:nth-child(7) { top: 55%; left: 30%; animation-delay: 0.8s; }
+.radar-dot:nth-child(8) { top: 70%; left: 65%; animation-delay: 1.6s; }
+.radar-dot:nth-child(9) { top: 40%; left: 75%; animation-delay: 2.4s; }
+.radar-dot:nth-child(10) { top: 15%; left: 40%; animation-delay: 1.2s; }
+.radar-dot:nth-child(11) { top: 80%; left: 45%; animation-delay: 3.2s; }
+.radar-dot:nth-child(12) { top: 45%; left: 20%; animation-delay: 2s; }
+.radar-dot:nth-child(13) { top: 65%; left: 50%; animation-delay: 0.4s; }
+
+.radar-center {
+  position: absolute;
+  inset: 45%;
+  border-radius: 50%;
+  background: #6C4CE0;
+  box-shadow: 0 0 12px rgba(108, 76, 224, 0.5);
+}
+
+.radar-grid {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 49%, rgba(108, 76, 224, 0.15) 49%, rgba(108, 76, 224, 0.15) 51%, transparent 51%),
+    repeating-linear-gradient(90deg, transparent, transparent 49%, rgba(108, 76, 224, 0.15) 49%, rgba(108, 76, 224, 0.15) 51%, transparent 51%);
+}
+
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes radar-dot-pulse {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  20% { opacity: 1; transform: scale(1); }
+  40% { opacity: 0.6; transform: scale(0.8); }
+  60% { opacity: 0; transform: scale(0.5); }
+}
+
+@keyframes radar-reveal {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep {
+    animation: none;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      rgba(57, 255, 136, 0.08) 45deg,
+      transparent 90deg
+    );
+  }
+
+  .radar-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
