@@ -3,6 +3,29 @@ import { LeadData, GeneratedCopy, GeneratedWeb } from './types'
 import { getStyleForCategory } from './styles'
 import { generateCopy } from './gemini'
 
+async function validateWeb(url: string, businessName: string): Promise<boolean> {
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
+    if (!res.ok) {
+      console.warn(`  ⚠ Validation: HTTP ${res.status} for ${url}`)
+      return false
+    }
+    const text = await res.text()
+    if (!text.includes(businessName)) {
+      console.warn(`  ⚠ Validation: "${businessName}" not found in page content`)
+      return false
+    }
+    console.log(`  ✓ Validation: ${url} loads OK and contains business name`)
+    return true
+  } catch (err: any) {
+    console.warn(`  ⚠ Validation failed: ${err.message}`)
+    return false
+  }
+}
+
 let _supabase: SupabaseClient | null = null
 function getDb(): SupabaseClient {
   if (!_supabase) {
@@ -56,37 +79,43 @@ export async function generateWebForLead(lead: LeadData): Promise<GeneratedWeb |
     copy,
   })
 
+  const webData = {
+    lead_id: lead.id,
+    url_demo,
+    estilo_aplicado,
+    estado: 'aprobada' as const,
+  }
+
   const { error, data } = await getDb()
     .from('webs_generadas')
-    .insert({
-      lead_id: lead.id,
-      url_demo,
-      estilo_aplicado,
-      estado: 'pendiente_revision',
-    })
+    .insert(webData)
     .select()
     .single()
 
   if (error) {
     console.error(`  ✗ Supabase error: ${error.message}`)
-    // Try insert without select
-    const { error: err2 } = await getDb().from('webs_generadas').insert({
-      lead_id: lead.id,
-      url_demo,
-      estilo_aplicado,
-      estado: 'pendiente_revision',
-    })
+    const { error: err2 } = await getDb().from('webs_generadas').insert(webData)
     if (err2) {
       console.error(`  ✗ Supabase error (retry): ${err2.message}`)
       return null
     }
-    return { lead_id: lead.id, url_demo, estilo_aplicado, estado: 'pendiente_revision' }
   }
+
+  // Auto-validation before publishing
+  const valid = await validateWeb(url_demo, lead.nombre_negocio)
+  if (!valid) {
+    console.warn(`  ⚠ Web auto-approved despite validation warning — check manually: ${url_demo}`)
+  } else {
+    console.log(`  🟢 Web auto-approved and validated: ${url_demo}`)
+  }
+
+  // Advance lead to email_listo (same as old approve-web API did)
+  await getDb().from('leads').update({ estado: 'email_listo' }).eq('id', lead.id)
 
   if (data) {
     console.log(`  ✓ Web saved: ${url_demo}`)
     return data as GeneratedWeb
   }
 
-  return { lead_id: lead.id, url_demo, estilo_aplicado, estado: 'pendiente_revision' }
+  return { lead_id: lead.id, url_demo, estilo_aplicado, estado: 'aprobada' }
 }

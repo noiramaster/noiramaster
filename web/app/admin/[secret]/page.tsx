@@ -40,9 +40,7 @@ export default function AdminDashboard() {
   const [emails, setEmails] = useState<EmailItem[]>([])
   const [stats, setStats] = useState<Stats>({ total_leads: 0, webs_generadas: 0, emails_enviados: 0, respuestas: 0 })
   const [config, setConfig] = useState<Config | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [alertMsg, setAlertMsg] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     const [websRes, emailsRes, statsRes, configRes] = await Promise.all([
@@ -59,16 +57,6 @@ export default function AdminDashboard() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
-
-  const handleApproveWeb = async (webId: string) => {
-    const res = await fetch('/api/approve-web', { method: 'POST', body: JSON.stringify({ webId }), headers: { 'Content-Type': 'application/json' } })
-    fetchData()
-  }
-
-  const handleRejectWeb = async (webId: string) => {
-    await fetch('/api/reject-web', { method: 'POST', body: JSON.stringify({ webId }), headers: { 'Content-Type': 'application/json' } })
-    fetchData()
-  }
 
   if (loading) {
     return (
@@ -87,14 +75,6 @@ export default function AdminDashboard() {
   return (
     <div style={{ background: '#0A0A0F', color: '#F5F3FF', minHeight: '100vh' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
-        {/* Alerts */}
-        {alertMsg && (
-          <div style={{ background: '#2A1F1F', border: '1px solid #F87171', borderRadius: 12, padding: '12px 20px', marginBottom: 24, color: '#F87171', fontSize: 14 }}>
-            {alertMsg}
-            <button onClick={() => setAlertMsg(null)} style={{ float: 'right', background: 'none', border: 'none', color: '#F87171', cursor: 'pointer' }}>✕</button>
-          </div>
-        )}
-
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
           <h1 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 28, fontWeight: 700 }}>
@@ -140,44 +120,29 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          {/* WEBS PENDING REVIEW */}
+          {/* WEBS HISTORY (auto-approved, read-only) */}
           <section>
             <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
-              Webs pendientes <span style={{ color: '#8B85A8', fontSize: 14, fontWeight: 400 }}>({webs.length})</span>
+              Historial de webs <span style={{ color: '#8B85A8', fontSize: 14, fontWeight: 400 }}>({webs.length})</span>
             </h2>
             {webs.length === 0 ? (
               <p style={{ color: '#8B85A8', fontSize: 14, padding: 24, textAlign: 'center', background: '#15131F', borderRadius: 12, border: '1px solid #2A2640' }}>
-                No hay webs pendientes de revisión
+                No hay webs generadas todavía
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {webs.map(w => (
                   <div key={w.id} style={{ background: '#15131F', border: '1px solid #2A2640', borderRadius: 12, padding: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <div>
-                        <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, margin: 0 }}>{w.leads?.nombre_negocio || '—'}</h3>
-                        <p style={{ color: '#8B85A8', fontSize: 13, margin: '4px 0 0' }}>{w.leads?.categoria} · {w.leads?.pais}</p>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => handleApproveWeb(w.id)} style={{ background: '#39FF88', color: '#0A0A0F', border: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                          Aprobar
-                        </button>
-                        <button onClick={() => handleRejectWeb(w.id)} style={{ background: 'transparent', color: '#F87171', border: '1px solid #F87171', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                          Rechazar
-                        </button>
-                        <button onClick={() => setPreviewUrl(previewUrl === w.url_demo ? null : w.url_demo)} style={{ background: 'transparent', color: '#6C4CE0', border: '1px solid #6C4CE0', padding: '6px 16px', borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                          {previewUrl === w.url_demo ? 'Cerrar' : 'Preview'}
-                        </button>
-                      </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, margin: 0 }}>{w.leads?.nombre_negocio || '—'}</h3>
+                      <p style={{ color: '#8B85A8', fontSize: 13, margin: '4px 0 0' }}>{w.leads?.categoria} · {w.leads?.pais}</p>
                     </div>
                     <p style={{ color: '#9B84F0', fontSize: 12, margin: 0 }}>
                       <a href={w.url_demo} target="_blank" rel="noopener noreferrer" style={{ color: '#9B84F0' }}>{w.url_demo}</a>
                     </p>
-                    {previewUrl === w.url_demo && (
-                      <div style={{ marginTop: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #2A2640' }}>
-                        <iframe src={w.url_demo} style={{ width: '100%', height: 400, border: 'none', background: '#fff' }} title="Preview" />
-                      </div>
-                    )}
+                    <p style={{ color: '#39FF88', fontSize: 12, marginTop: 4 }}>
+                      Auto-aprobada {new Date(w.created_at).toLocaleString('es-ES')}
+                    </p>
                   </div>
                 ))}
               </div>

@@ -14,8 +14,9 @@ export async function GET(req: NextRequest) {
         const { data } = await supabase
           .from('webs_generadas')
           .select('*, leads!inner(*)')
-          .eq('estado', 'pendiente_revision')
+          .eq('estado', 'aprobada')
           .order('created_at', { ascending: false })
+          .limit(50)
         return NextResponse.json(data || [])
       }
 

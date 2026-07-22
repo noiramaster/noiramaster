@@ -28,5 +28,5 @@ export interface GeneratedWeb {
   lead_id: string
   url_demo: string
   estilo_aplicado: string
-  estado: 'pendiente_revision'
+  estado: 'aprobada'
 }
