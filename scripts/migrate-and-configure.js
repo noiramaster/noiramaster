@@ -3,31 +3,19 @@ const { createClient } = require('@supabase/supabase-js')
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN
+const PROJECT_REF = SUPABASE_URL ? SUPABASE_URL.replace('https://', '').split('.')[0] : ''
 
 async function runSQL(sql) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-  // Attempt to call each possible SQL RPC
-  const rpcs = ['exec_sql', 'pgm_execute', 'pgexecute', 'sql', 'query']
-  for (const rpc of rpcs) {
-    try {
-      const { data, error } = await supabase.rpc(rpc, { query: sql, sql_text: sql, sql: sql })
-      if (!error) return { method: rpc, data }
-    } catch (e) {
-      // continue
-    }
+  // Install pg at runtime
+  const { Client } = require('pg')
+  const connString = `postgresql://postgres.${PROJECT_REF}:${encodeURIComponent(SUPABASE_KEY)}@db.${PROJECT_REF}.supabase.co:5432/postgres?sslmode=require`
+  const client = new Client({ connectionString: connString })
+  await client.connect()
+  try {
+    await client.query(sql)
+  } finally {
+    await client.end()
   }
-  // Try via custom fetch to postgREST with raw SQL header
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'apiKey': SUPABASE_KEY,
-      'Accept': 'application/json',
-      'X-SQL': sql,
-    },
-  })
-  if (res.ok) return { method: 'X-SQL', data: await res.json() }
-  throw new Error('ALL_SQL_METHODS_FAILED')
 }
 
 async function getVercelEnvId(projectId, key) {
@@ -45,34 +33,22 @@ async function setVercelEnv(projectId, key, value) {
   if (existingId) {
     const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${existingId}`, {
       method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ value }),
     })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`PATCH error: ${text}`)
-    }
+    if (!res.ok) { const t = await res.text(); throw new Error('PATCH: ' + t) }
   } else {
     const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${VERCEL_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, value, target: ['production'], type: 'sensitive' }),
     })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(`POST error: ${text}`)
-    }
+    if (!res.ok) { const t = await res.text(); throw new Error('POST: ' + t) }
   }
 }
 
 async function main() {
-  console.log('STARTING MIGRATION AND CONFIGURATION...')
+  console.log('STARTING...')
   const errors = []
 
   const sql = `
@@ -89,18 +65,15 @@ CREATE TABLE IF NOT EXISTS recomendaciones (
 CREATE INDEX IF NOT EXISTS idx_recomendaciones_estado ON recomendaciones(estado);
 ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
 `
-
   if (SUPABASE_URL && SUPABASE_KEY) {
     try {
-      const result = await runSQL(sql)
-      console.log('MIGRATION_OK method=' + result.method)
+      await runSQL(sql)
+      console.log('MIGRATION_OK')
     } catch (e) {
-      errors.push(`SQL: ${e.message}`)
+      errors.push('SQL: ' + e.message.split('\n')[0])
       console.log('SQL_TO_RUN_MANUALLY:')
       console.log(sql)
     }
-  } else {
-    errors.push('Missing Supabase env vars')
   }
 
   if (VERCEL_TOKEN && SUPABASE_KEY) {
@@ -110,13 +83,9 @@ ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
     ]) {
       try {
         await setVercelEnv(proj.id, 'SUPABASE_SERVICE_ROLE_KEY', SUPABASE_KEY)
-        console.log('VERCEL_ENV_OK ' + proj.name + ': SUPABASE_SERVICE_ROLE_KEY')
-      } catch (e) {
-        errors.push('Vercel env for ' + proj.name + ': ' + e.message)
-      }
+        console.log('VERCEL_OK ' + proj.name)
+      } catch (e) { errors.push('Vercel ' + proj.name + ': ' + e.message) }
     }
-  } else {
-    errors.push('Missing Vercel token or Supabase key')
   }
 
   if (errors.length > 0) {

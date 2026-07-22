@@ -9,7 +9,7 @@ jobs:
         with:
           node-version: 22
       - name: Install deps
-        run: npm install @supabase/supabase-js
+        run: npm install @supabase/supabase-js pg
       - name: Run migration and configure Vercel
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
