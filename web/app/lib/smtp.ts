@@ -14,15 +14,16 @@ function getTransporter() {
 }
 
 function buildRgpdBody(cuerpoOriginal: string): string {
+  const direccion = process.env.DIRECCION_FISICA || 'Calle [Pendiente de registro]'
   const footer = `
 ---
 Noira Webs — Cazamos negocios invisibles
-[DIRECCIÓN FÍSICA DE NOIRA]
+${direccion}
 noiramaster@gmail.com
 
 Si no quieres recibir más emails, responde a este correo con "BAJA" en el asunto.
 `
-  return cuerpoOriginal + footer
+  return cuerpoOriginal.replace(/\[DIRECCIÓN FÍSICA DE NOIRA\]/g, direccion) + footer
 }
 
 export async function sendEmail(leadId: string, emailId: string): Promise<{ ok: boolean; error?: string }> {
