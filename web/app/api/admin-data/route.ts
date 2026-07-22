@@ -23,8 +23,9 @@ export async function GET(req: NextRequest) {
         const { data } = await supabase
           .from('emails')
           .select('*, leads!inner(*)')
-          .eq('estado', 'borrador')
-          .order('created_at', { ascending: false })
+          .eq('estado', 'enviado')
+          .order('fecha_enviado', { ascending: false })
+          .limit(50)
         return NextResponse.json(data || [])
       }
 

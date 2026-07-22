@@ -6,26 +6,44 @@ on:
   workflow_dispatch:
 
 jobs:
-  scrape:
+  limits-check:
     runs-on: ubuntu-latest
-
+    outputs:
+      paused: ${{ steps.check.outputs.paused }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install check dependencies
+        run: npm install @supabase/supabase-js
+      - name: Check free tier limits
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          node scripts/check-limits.js && echo "paused=false" >> $GITHUB_OUTPUT || echo "paused=true" >> $GITHUB_OUTPUT
 
+  scrape:
+    needs: limits-check
+    if: needs.limits-check.outputs.paused != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Install scraper dependencies
         run: |
           cd scraper
           npm ci
-
       - name: Install Playwright browsers
         run: |
           cd scraper
           npx playwright install chromium --with-deps
-
       - name: Run scraper
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
