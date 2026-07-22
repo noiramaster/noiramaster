@@ -28,3 +28,18 @@ supabase/verify.js
 /package.json
 /package-lock.json
 /node_modules/
+
+# Vercel
+.vercel/
+
+# Environment files (all variants)
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+**/dist
