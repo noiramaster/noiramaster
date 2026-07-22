@@ -70,7 +70,7 @@ export async function generateWebForLead(lead: LeadData): Promise<GeneratedWeb |
   }
 
   const slug = slugify(lead.nombre_negocio)
-  const url_demo = `https://noiramaster-web-client.vercel.app/cliente/${slug}`
+  const url_demo = `https://noira-demos.vercel.app/cliente/${slug}`
 
   const estilo_aplicado = JSON.stringify({
     style: style.name,

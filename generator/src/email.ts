@@ -92,7 +92,7 @@ export async function generateEmailForLead(lead: LeadData): Promise<void> {
     .replace(/^-|-$/g, '')
     .slice(0, 60)
 
-  const webUrl = `https://noiramaster-web-client.vercel.app/cliente/${slug}`
+  const webUrl = `https://noira-demos.vercel.app/cliente/${slug}`
 
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
@@ -104,7 +104,7 @@ El idioma debe ser ${lead.idioma === 'fr' ? 'francés' : 'español'}.
 Requisitos:
 - MÁXIMO 1-2 emojis en todo el email
 - Incluye este enlace a su web ya creada: ${webUrl}
-- Incluye este enlace a la agencia NOIRA: https://noiramaster-web-client.vercel.app
+- Incluye este enlace a la agencia NOIRA: https://noira-demos.vercel.app
 - Incluye un texto de baja: "Si no quieres recibir más emails, responde BAJA"
 - Remitente identificado: "NOIRA — Cazamos negocios invisibles"
 - Tono cercano pero profesional
@@ -144,7 +144,7 @@ ${webUrl}
 
 Es gratis y sin compromiso. Solo tienes que decirnos si quieres publicarla.
 
-Más info: https://noiramaster-web-client.vercel.app
+Más info: https://noira-demos.vercel.app
 
 [DIRECCIÓN FÍSICA DE NOIRA]
 Si no quieres recibir más emails, responde BAJA

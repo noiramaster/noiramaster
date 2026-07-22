@@ -32,10 +32,27 @@ const portfolioCases = [
 export default function Home() {
   const [form, setForm] = useState({ nombre: "", email: "", negocio: "", mensaje: "" })
   const [enviado, setEnviado] = useState(false)
+  const [error, setError] = useState("")
+  const [enviando, setEnviando] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setEnviado(true)
+    setError("")
+    setEnviando(true)
+    try {
+      const res = await fetch('/api/recomendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error al enviar')
+      setEnviado(true)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -310,11 +327,15 @@ export default function Home() {
                   />
                 </div>
 
+                {error && (
+                  <p className="text-red-400 text-sm text-center">{error}</p>
+                )}
                 <button
                   type="submit"
-                  className="w-full py-3 px-8 rounded-lg bg-violeta text-white font-medium hover:bg-violeta/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violeta"
+                  disabled={enviando}
+                  className="w-full py-3 px-8 rounded-lg bg-violeta text-white font-medium hover:bg-violeta/90 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violeta disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Enviar recomendación
+                  {enviando ? 'Enviando...' : 'Enviar recomendación'}
                 </button>
               </form>
             )}

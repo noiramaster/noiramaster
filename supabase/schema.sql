@@ -117,12 +117,29 @@ CREATE INDEX idx_emails_estado ON emails(estado);
 CREATE INDEX idx_emails_lead_id ON emails(lead_id);
 
 -- ============================================================
+-- TABLA: recomendaciones (formulario público)
+-- ============================================================
+CREATE TABLE recomendaciones (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  nombre_recomendante TEXT NOT NULL,
+  email_recomendante  TEXT NOT NULL,
+  negocio_recomendado TEXT NOT NULL,
+  ubicacion_o_info    TEXT,
+  fecha               TIMESTAMPTZ DEFAULT NOW(),
+  estado              TEXT NOT NULL DEFAULT 'nueva' CHECK (estado IN ('nueva', 'contactada', 'cerrada', 'descartada')),
+  created_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_recomendaciones_estado ON recomendaciones(estado);
+
+-- ============================================================
 -- ROW LEVEL SECURITY (activada, SIN políticas para anon)
 -- ============================================================
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webs_generadas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE config_envio ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
 
 -- Nota: no se crean políticas para 'anon' porque todo el acceso
 -- será vía service_role key desde el servidor / GitHub Actions.
