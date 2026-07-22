@@ -4,19 +4,13 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN
 
-async function runSQL(supabase, sql) {
-  // Try REST API with service_role key
-  const url = `${SUPABASE_URL}/rest/v1/`
-  const headers = {
-    'apikey': SUPABASE_KEY,
-    'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'headers-only',
-  }
-  // Use pg_dump endpoint to execute raw SQL
+async function runSQL(sql) {
   const res = await fetch(`${SUPABASE_URL}/pg/v1/sql`, {
     method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({ query: sql }),
   })
   if (!res.ok) {
@@ -26,25 +20,49 @@ async function runSQL(supabase, sql) {
   return res
 }
 
-async function setVercelEnv(projectId, key, value) {
+async function getVercelEnvId(projectId, key) {
   const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${VERCEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      key,
-      value,
-      target: ['production'],
-      type: 'sensitive',
-    }),
+    headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Vercel env error for ${key}: ${text}`)
+  if (!res.ok) return null
+  const data = await res.json()
+  const env = data.envs.find(e => e.key === key)
+  return env ? env.id : null
+}
+
+async function setVercelEnv(projectId, key, value) {
+  const existingId = await getVercelEnvId(projectId, key)
+  if (existingId) {
+    const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env/${existingId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${VERCEL_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ value }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`PATCH error: ${text}`)
+    }
+  } else {
+    const res = await fetch(`https://api.vercel.com/v9/projects/${projectId}/env`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${VERCEL_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        key, value,
+        target: ['production'],
+        type: 'sensitive',
+      }),
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`POST error: ${text}`)
+    }
   }
-  return res.json()
 }
 
 async function main() {
@@ -53,7 +71,6 @@ async function main() {
 
   // Step 1: Run SQL migration
   if (SUPABASE_URL && SUPABASE_KEY) {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
     const sql = `
 CREATE TABLE IF NOT EXISTS recomendaciones (
   id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -69,23 +86,10 @@ CREATE INDEX IF NOT EXISTS idx_recomendaciones_estado ON recomendaciones(estado)
 ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
 `
     try {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-      const { error } = await supabase.rpc('exec_sql', { sql })
-      if (error) {
-        // Fallback: use pg SQL endpoint
-        try {
-          await runSQL(supabase, sql)
-          console.log('MIGRATION_OK (via pg endpoint)')
-        } catch (e) {
-          errors.push(`SQL fallback failed: ${e.message}`)
-          console.log('SQL_TO_RUN_MANUALLY:')
-          console.log(sql)
-        }
-      } else {
-        console.log('MIGRATION_OK (via rpc)')
-      }
+      await runSQL(sql)
+      console.log('MIGRATION_OK')
     } catch (e) {
-      errors.push(`Migration error: ${e.message}`)
+      errors.push(`SQL migration failed: ${e.message}`)
       console.log('SQL_TO_RUN_MANUALLY:')
       console.log(sql)
     }
