@@ -9,7 +9,7 @@ async function runSQL(sql) {
   // Install pg at runtime
   const { Client } = require('pg')
   const connString = `postgresql://postgres.${PROJECT_REF}:${encodeURIComponent(SUPABASE_KEY)}@db.${PROJECT_REF}.supabase.co:5432/postgres?sslmode=require`
-  const client = new Client({ connectionString: connString })
+  const client = new Client({ connectionString: connString, family: 4 })
   await client.connect()
   try {
     await client.query(sql)
