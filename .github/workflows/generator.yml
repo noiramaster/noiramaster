@@ -1,12 +1,12 @@
-name: Scraper
+name: Generator
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '30 */3 * * *'
   workflow_dispatch:
 
 jobs:
-  scrape:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,20 +16,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install scraper dependencies
+      - name: Install dependencies
         run: |
-          cd scraper
+          cd generator
           npm ci
 
-      - name: Install Playwright browsers
-        run: |
-          cd scraper
-          npx playwright install chromium --with-deps
-
-      - name: Run scraper
+      - name: Run generator
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          cd scraper
+          cd generator
           npm run dev

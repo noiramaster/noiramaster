@@ -16,11 +16,20 @@ export async function queryOverpass(
 ): Promise<DiscoveredBusiness[]> {
   const query = buildQuery(city, category)
 
-  const res = await fetch(OVERPASS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ data: query }),
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 70000)
+
+  let res: Response
+  try {
+    res = await fetch(OVERPASS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ data: query }),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!res.ok) {
     throw new Error(`Overpass error: ${res.status} ${await res.text()}`)

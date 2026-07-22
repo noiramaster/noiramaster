@@ -4,38 +4,55 @@ import { enrichWithGoogleData } from './google'
 import { saveLeads } from './supabase'
 import { DiscoveredBusiness } from './types'
 
+function log(msg: string) {
+  console.log(`[${new Date().toISOString()}] ${msg}`)
+}
+
 async function main() {
-  console.log('🔍 NOIRA Scraper - Starting discovery')
-  console.log(`Cities: ${CITIES.length} | Categories: ${CATEGORIES.length} | Max leads: ${MAX_LEADS_PER_RUN}\n`)
+  log('🔍 NOIRA Scraper - Starting discovery')
+  log(`Cities: ${CITIES.length} | Categories: ${CATEGORIES.length} | Max leads: ${MAX_LEADS_PER_RUN}`)
 
   const allDiscovered: DiscoveredBusiness[] = []
 
   for (const city of CITIES) {
     for (const category of CATEGORIES) {
-      console.log(`Querying ${city.name} / ${category.name}...`)
+      log(`Querying ${city.name} / ${category.name}...`)
 
       try {
         const results = await queryOverpass(city, category)
-        console.log(`  → ${results.length} businesses found (no website)`)
+        log(`  → ${results.length} businesses found (no website)`)
 
         allDiscovered.push(...results)
       } catch (err) {
-        console.error(`  ✗ Error: ${err}`)
+        log(`  ✗ Overpass error: ${err}`)
       }
     }
   }
 
-  console.log(`\nTotal discovered without website: ${allDiscovered.length}`)
-  console.log('Verifying on Google Maps...\n')
+  log(`Total discovered without website: ${allDiscovered.length}`)
 
-  const verified = await enrichWithGoogleData(allDiscovered)
-
-  console.log(`\nVerified on Google Maps: ${verified.length}`)
+  let verified: DiscoveredBusiness[] = []
+  if (allDiscovered.length > 0) {
+    log('Verifying on Google Maps...')
+    try {
+      verified = await enrichWithGoogleData(allDiscovered)
+      log(`Verified on Google Maps: ${verified.length}`)
+    } catch (err) {
+      log(`✗ Google Maps verification failed: ${err}`)
+    }
+  } else {
+    log('Skipping Google verification — no businesses discovered.')
+  }
 
   const limited = verified.slice(0, MAX_LEADS_PER_RUN)
-  const saved = await saveLeads(limited)
+  let saved = 0
+  try {
+    saved = await saveLeads(limited)
+  } catch (err) {
+    log(`✗ Failed to save leads: ${err}`)
+  }
 
-  console.log(`\n✅ Done. ${saved} new leads saved to Supabase.`)
+  log(`✅ Done. ${saved} new leads saved to Supabase.`)
 }
 
 main().catch((err) => {

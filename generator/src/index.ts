@@ -25,22 +25,26 @@ async function main() {
   console.log(`Found ${leads.length} leads to process\n`)
 
   for (const lead of leads) {
-    if (mode === 'all' || mode === 'web') {
-      const web = await generateWebForLead(lead)
-      if (web) {
+    try {
+      if (mode === 'all' || mode === 'web') {
+        const web = await generateWebForLead(lead)
+        if (web) {
+          await supabase
+            .from('leads')
+            .update({ estado: 'web_generada' })
+            .eq('id', lead.id)
+        }
+      }
+
+      if (mode === 'all' || mode === 'email') {
+        await generateEmailForLead(lead)
         await supabase
           .from('leads')
-          .update({ estado: 'web_generada' })
+          .update({ estado: 'email_listo' })
           .eq('id', lead.id)
       }
-    }
-
-    if (mode === 'all' || mode === 'email') {
-      await generateEmailForLead(lead)
-      await supabase
-        .from('leads')
-        .update({ estado: 'email_listo' })
-        .eq('id', lead.id)
+    } catch (err) {
+      console.error(`✗ Lead ${lead.id} (${lead.nombre_negocio}) failed: ${err}`)
     }
   }
 
