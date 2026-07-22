@@ -20,6 +20,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(data || [])
       }
 
+      case 'precios': {
+        return NextResponse.json({
+          precio_mensual: 19,
+          moneda: 'EUR',
+          price_id: process.env.STRIPE_PRICE_ID || '',
+        })
+      }
+
       case 'emails': {
         const { data } = await supabase
           .from('emails')

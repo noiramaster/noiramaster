@@ -29,4 +29,6 @@ export interface GeneratedWeb {
   url_demo: string
   estilo_aplicado: string
   estado: 'aprobada'
+  estado_pago?: string
+  fecha_caducidad?: string
 }

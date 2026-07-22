@@ -84,6 +84,8 @@ export async function generateWebForLead(lead: LeadData): Promise<GeneratedWeb |
     url_demo,
     estilo_aplicado,
     estado: 'aprobada' as const,
+    estado_pago: 'demo',
+    fecha_caducidad: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   }
 
   const { error, data } = await getDb()

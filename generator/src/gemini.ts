@@ -27,10 +27,14 @@ No uses emojis. Responde SOLO con JSON válido con esta estructura exacta:
   const copy: GeneratedCopy = JSON.parse(jsonMatch[0])
 
   copy.hero_title = copy.hero_title || lead.nombre_negocio
-  copy.hero_subtitle = copy.hero_subtitle || `Tu ${lead.categoria} de confianza`
-  copy.services = copy.services || ['Atención personalizada', 'Calidad garantizada']
-  copy.about = copy.about || `${lead.nombre_negocio} ofrece servicios de ${lead.categoria} en ${lead.ubicacion}.`
-  copy.cta = copy.cta || 'Contáctanos'
+  copy.hero_subtitle = copy.hero_subtitle || (lead.idioma === 'fr' ? `Votre ${lead.categoria} de confiance` : `Tu ${lead.categoria} de confianza`)
+  copy.services = copy.services || (lead.idioma === 'fr'
+    ? ['Service personnalisé', 'Qualité garantie', 'Prix justes', 'Horaires flexibles']
+    : ['Atención personalizada', 'Calidad garantizada', 'Precios justos', 'Horario flexible'])
+  copy.about = copy.about || (lead.idioma === 'fr'
+    ? `${lead.nombre_negocio} propose des services de ${lead.categoria} à ${lead.ubicacion}.`
+    : `${lead.nombre_negocio} ofrece servicios de ${lead.categoria} en ${lead.ubicacion}.`)
+  copy.cta = copy.cta || (lead.idioma === 'fr' ? 'Contactez-nous' : 'Contáctanos')
 
   return copy
 }

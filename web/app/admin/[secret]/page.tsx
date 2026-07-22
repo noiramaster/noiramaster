@@ -2,11 +2,19 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
+interface Precios {
+  precio_mensual: number
+  moneda: string
+  price_id: string
+}
+
 interface WebItem {
   id: string
   lead_id: string
   url_demo: string
   estado: string
+  estado_pago: string
+  fecha_caducidad: string
   created_at: string
   leads: { nombre_negocio: string; categoria: string; ubicacion: string; pais: string }
 }
@@ -40,19 +48,22 @@ export default function AdminDashboard() {
   const [emails, setEmails] = useState<EmailItem[]>([])
   const [stats, setStats] = useState<Stats>({ total_leads: 0, webs_generadas: 0, emails_enviados: 0, respuestas: 0 })
   const [config, setConfig] = useState<Config | null>(null)
+  const [precios, setPrecios] = useState<Precios | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
-    const [websRes, emailsRes, statsRes, configRes] = await Promise.all([
+    const [websRes, emailsRes, statsRes, configRes, preciosRes] = await Promise.all([
       fetch('/api/admin-data?type=webs'),
       fetch('/api/admin-data?type=emails'),
       fetch('/api/admin-data?type=stats'),
       fetch('/api/admin-data?type=config'),
+      fetch('/api/admin-data?type=precios'),
     ])
     if (websRes.ok) setWebs(await websRes.json())
     if (emailsRes.ok) setEmails(await emailsRes.json())
     if (statsRes.ok) setStats(await statsRes.json())
     if (configRes.ok) setConfig(await configRes.json())
+    if (preciosRes.ok) setPrecios(await preciosRes.json())
     setLoading(false)
   }, [])
 
@@ -140,6 +151,13 @@ export default function AdminDashboard() {
                     <p style={{ color: '#9B84F0', fontSize: 12, margin: 0 }}>
                       <a href={w.url_demo} target="_blank" rel="noopener noreferrer" style={{ color: '#9B84F0' }}>{w.url_demo}</a>
                     </p>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4, fontSize: 12 }}>
+                      <span style={{ color: w.estado_pago === 'activa' ? '#39FF88' : w.estado_pago === 'demo' ? '#F59E0B' : '#F87171' }}>
+                        {w.estado_pago === 'activa' ? '● Activa' : w.estado_pago === 'demo' ? '◌ Demo' : w.estado_pago === 'cancelada' ? '✕ Cancelada' : '! Impagada'}
+                      </span>
+                      {precios && <span style={{ color: '#8B85A8' }}>{precios.precio_mensual}€/mes</span>}
+                      {w.fecha_caducidad && <span style={{ color: '#8B85A8' }}>Caduca {new Date(w.fecha_caducidad).toLocaleDateString('es-ES')}</span>}
+                    </div>
                     <p style={{ color: '#39FF88', fontSize: 12, marginTop: 4 }}>
                       Auto-aprobada {new Date(w.created_at).toLocaleString('es-ES')}
                     </p>

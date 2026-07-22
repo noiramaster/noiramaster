@@ -134,8 +134,27 @@ Responde SOLO con JSON:
     console.error(`  ✗ Gemini error: ${err}`)
     console.log('  Using fallback copy')
 
-    asunto = `¿${lead.nombre_negocio} sin web? Te tenemos cubierto`
-    cuerpo = `Hola,
+    if (lead.idioma === 'fr') {
+      asunto = `${lead.nombre_negocio} sans site web ? Nous avons ce qu'il vous faut`
+      cuerpo = `Bonjour,
+
+Nous sommes NOIRA, une agence qui aide les commerces locaux comme ${lead.nombre_negocio} à avoir une présence en ligne.
+
+Nous avons préparé un site web professionnel pour vous :
+${webUrl}
+
+C'est gratuit et sans engagement. Il vous suffit de nous dire si vous souhaitez le publier.
+
+Plus d'infos : https://noira-demos.vercel.app
+
+[DIRECCIÓN FÍSICA DE NOIRA]
+Si vous ne souhaitez plus recevoir d'emails, répondez "BAJA" à cet email.
+
+Cordialement,
+NOIRA`
+    } else {
+      asunto = `¿${lead.nombre_negocio} sin web? Te tenemos cubierto`
+      cuerpo = `Hola,
 
 Somos NOIRA, una agencia que ayuda a negocios locales como ${lead.nombre_negocio} a tener presencia online.
 
@@ -151,6 +170,7 @@ Si no quieres recibir más emails, responde BAJA
 
 Un saludo,
 NOIRA`
+    }
   }
 
   // Check daily limit before sending

@@ -44,6 +44,9 @@ CREATE TABLE webs_generadas (
                     'aprobada',
                     'rechazada'
                   )),
+  fecha_caducidad TIMESTAMPTZ,
+  stripe_subscription_id TEXT,
+  estado_pago     TEXT DEFAULT 'demo' CHECK (estado_pago IN ('demo', 'activa', 'cancelada', 'impagada')),
   fecha           TIMESTAMPTZ DEFAULT NOW(),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
