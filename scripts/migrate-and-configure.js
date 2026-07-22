@@ -8,7 +8,21 @@ const PROJECT_REF = SUPABASE_URL ? SUPABASE_URL.replace('https://', '').split('.
 async function runSQL(sql) {
   // Install pg at runtime
   const { Client } = require('pg')
-  const connString = `postgresql://postgres.${PROJECT_REF}:${encodeURIComponent(SUPABASE_KEY)}@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true`
+  const regions = ['eu-west-1', 'eu-west-2', 'eu-central-1', 'us-east-1', 'us-west-1', 'us-east-2', 'ca-central-1', 'ap-southeast-1']
+  let lastError = ''
+  for (const region of regions) {
+    try {
+      const connString = `postgresql://postgres.${PROJECT_REF}:${encodeURIComponent(SUPABASE_KEY)}@aws-0-${region}.pooler.supabase.com:6543/postgres?pgbouncer=true`
+      const client = new Client({ connectionString: connString })
+      await client.connect()
+      await client.query(sql)
+      await client.end()
+      return
+    } catch (e) {
+      lastError = e.message
+    }
+  }
+  throw new Error(lastError)
   const client = new Client({ connectionString: connString })
   await client.connect()
   try {
