@@ -142,6 +142,25 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute
+        const chargeId = dispute.charge as string
+        console.error('CHARGEBACK RECIBIDO:', JSON.stringify({ id: dispute.id, chargeId, amount: dispute.amount, status: dispute.status, reason: dispute.reason }))
+        // Guardar en una nueva tabla de log para visibilidad
+        try {
+          await supabase.from('disputas_log').insert({
+            dispute_id: dispute.id,
+            charge_id: chargeId,
+            amount: dispute.amount / 100,
+            motivo: dispute.reason,
+            estado: dispute.status,
+          }).select().single()
+        } catch (err) {
+          console.error('Error guardando disputa en log:', err)
+        }
+        break
+      }
+
       case 'customer.subscription.deleted':
       case 'invoice.payment_failed': {
         let subscriptionId: string

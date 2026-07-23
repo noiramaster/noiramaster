@@ -157,7 +157,7 @@ export default async function ClientPage({ params }: PageProps) {
         </section>
 
         <footer style={{ borderTop: `1px solid ${styles.border}`, padding: '32px 24px', textAlign: 'center', fontSize: 13, opacity: 0.5 }}>
-          <p>&copy; {new Date().getFullYear()} {name} &mdash; {t.footer}</p>
+        <p>&copy; {new Date().getFullYear()} {name} &mdash; {t.footer} &mdash; <a href="https://noira-smoky.vercel.app/terminos" style={{ color: 'inherit' }}>Términos</a> | <a href="https://noira-smoky.vercel.app/privacidad" style={{ color: 'inherit' }}>Privacidad</a></p>
         </footer>
       </div>
     )

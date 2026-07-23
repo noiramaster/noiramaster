@@ -285,6 +285,10 @@ export default function Home() {
       <footer className="border-t border-noir-border/50 py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-heading text-sm font-bold text-violeta">NOIRA</span>
+          <div className="flex gap-4 text-xs text-texto-muted">
+            <a href="/terminos" className="hover:text-violeta transition-colors">Términos</a>
+            <a href="/privacidad" className="hover:text-violeta transition-colors">Privacidad</a>
+          </div>
           <p className="text-xs text-texto-muted">&copy; {new Date().getFullYear()} NOIRA. {t.footer}</p>
         </div>
       </footer>

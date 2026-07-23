@@ -138,10 +138,26 @@ CREATE INDEX idx_recomendaciones_estado ON recomendaciones(estado);
 -- ============================================================
 -- TABLA: webhook_eventos (idempotencia Stripe)
 -- ============================================================
-CREATE TABLE webhook_eventos (
+-- ============================================================
+-- TABLA: webhook_eventos (idempotencia Stripe)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS webhook_eventos (
   id              TEXT PRIMARY KEY,
   tipo            TEXT NOT NULL,
   procesado_en    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
+-- TABLA: disputas_log (chargebacks de Stripe)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS disputas_log (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dispute_id      TEXT NOT NULL,
+  charge_id       TEXT,
+  amount          NUMERIC(10,2),
+  motivo          TEXT,
+  estado          TEXT,
+  creado_en       TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ============================================================
@@ -153,6 +169,7 @@ ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE config_envio ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_eventos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE disputas_log ENABLE ROW LEVEL SECURITY;
 
 -- Nota: no se crean políticas para 'anon' porque todo el acceso
 -- será vía service_role key desde el servidor / GitHub Actions.

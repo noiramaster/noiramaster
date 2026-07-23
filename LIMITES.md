@@ -13,8 +13,12 @@ y el comportamiento del sistema cuando se acerca a ellos.
 | ≥ 80% (1 600 min) | ⚠️ Warning en log del workflow |
 | ≥ 95% (1 900 min) | 🔴 Pipeline se PAUSA (exit code 2). No se ejecutan scraper ni generator |
 
-**Cada ejecución del scraper**: ~3-5 min (incluye instalación de Chromium vía npx)
+**Cada ejecución del scraper**: ~5-8 min (incluye instalación de Chromium)
 **Cada ejecución del generator**: ~1-2 min
+**Cada ejecución del límite-check**: ~30s
+
+Cálculo realista: con 8 ejecuciones/día (scraper cada 6h + generator cada 3h) ≈ 30-60 min/día ≈ 900-1800 min/mes.
+**Con 50 negocios activos pagando**, el sistema procesaría más leads → más ejecuciones → se acercaría al límite.
 
 Para liberar minutos: cachear `node_modules` y Chromium en las Actions.
 
@@ -27,11 +31,27 @@ Para liberar minutos: cachear `node_modules` y Chromium en las Actions.
 | Filas totales | ~100 000 | 50 000 | 95 000 |
 | Almacenamiento DB | 500 MB | 200 MB | 450 MB |
 
-Al pausar: el scraper y generator seguirán ejecutándose pero **no insertarán nuevos leads**.
+⚠️ **Importante**: Supabase free tier PAUSA proyectos tras 7 días sin actividad.
+NOIRA tiene actividad diaria (workflows), pero si se detienen los workflows, el proyecto entraría en pausa.
+Al pausar: la DB no responde hasta que se reanuda manualmente desde el dashboard.
+
+**Con 50 negocios activos**: cada negocio genera ~3 filas (lead + web + email) ≈ 150 filas/mes.
+No hay riesgo de filas en varios años. El almacenamiento tampoco es problema.
 
 ---
 
-## 3. Gmail (SMTP gratuito)
+## 3. Vercel Free Tier (Hobby)
+
+| Recurso | Límite | Nota |
+|---------|--------|------|
+| Invocaciones serverless/día | 100.000 | Suficiente incluso con 50 negocios |
+| Ancho de banda | 100 GB/mes | ~2 GB por cada 10.000 visitas |
+| Builds/mes | 6.000 minutos | Suficiente |
+| **Cold starts** | — | Las funciones serverless se duermen tras ~5 min sin uso. Primer request tras inactividad tarda 2-5s extra. **Normal**, no es un bug. |
+
+---
+
+## 4. Gmail SMTP (gratuito)
 
 | Recurso | Límite | Warning | Crítico (PAUSA) |
 |---------|--------|---------|-----------------|
@@ -42,23 +62,36 @@ NOIRA envía todos los emails **a noiramaster@gmail.com** (modo desarrollo).
 Al cambiar a destinatarios reales, respetar estos límites.
 
 **Si un email rebota o falla**: el sistema marca el email como `error_envio`.
-**Si el contador diario se excede**: los nuevos emails se guardan como `borrador`
-y se envían al día siguiente cuando el contador se resetea.
+**Si el contador diario se excede**: los nuevos emails se guardan como `borrador`.
+
+⚠️ **Con 50 negocios activos**: cada ciclo del generator podría enviar hasta 5 emails.
+Incluso con 50 negocios, el límite diario no se alcanza. El problema es la reputación del remitente,
+no el límite técnico.
 
 ---
 
-## 4. Overpass API (gratuita)
+## 5. Overpass API (gratuita)
 
 Sin límite duro documentado, pero solicitudes masivas (>100/min) pueden ser
 rate-limitadas. NOIRA respeta un delay aleatorio entre 3-8s entre queries.
 
 ---
 
-## 5. Gemini API
+## 6. Gemini API
 
 La API key actual no tiene cuota disponible (429/403). El sistema usa fallback
 sin IA: copia genérica + email plantilla. Funcionalidad completa cuando la key
 tenga cuota.
+
+La cuota gratuita de Gemini es generosa (60 requests/minuto, sin límite diario duro).
+Si se activa, no debería ser un cuello de botella.
+
+---
+
+## 7. Stripe (pagos)
+
+Sin límite gratuito real. Stripe cobra ~2.9% + 0.30€ por transacción.
+Con 50 suscripciones a 19€/mes: ingresos ~950€/mes, comisiones ~57,55€/mes.
 
 ---
 
