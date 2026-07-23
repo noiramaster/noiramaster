@@ -40,10 +40,21 @@ jobs:
         run: |
           cd scraper
           npm ci
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('scraper/package-lock.json') }}
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           cd scraper
           npx playwright install chromium --with-deps
+      - name: Ensure Playwright browsers
+        run: |
+          cd scraper
+          npx playwright install chromium
       - name: Run scraper
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
