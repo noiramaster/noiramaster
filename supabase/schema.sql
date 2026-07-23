@@ -136,6 +136,15 @@ CREATE TABLE recomendaciones (
 CREATE INDEX idx_recomendaciones_estado ON recomendaciones(estado);
 
 -- ============================================================
+-- TABLA: webhook_eventos (idempotencia Stripe)
+-- ============================================================
+CREATE TABLE webhook_eventos (
+  id              TEXT PRIMARY KEY,
+  tipo            TEXT NOT NULL,
+  procesado_en    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
 -- ROW LEVEL SECURITY (activada, SIN políticas para anon)
 -- ============================================================
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
@@ -143,6 +152,7 @@ ALTER TABLE webs_generadas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE config_envio ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recomendaciones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_eventos ENABLE ROW LEVEL SECURITY;
 
 -- Nota: no se crean políticas para 'anon' porque todo el acceso
 -- será vía service_role key desde el servidor / GitHub Actions.

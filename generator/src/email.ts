@@ -28,20 +28,15 @@ function getTransporter() {
   })
 }
 
-function buildBody(cuerpoOriginal: string): string {
-  const direccion = process.env.DIRECCION_FISICA || 'Calle [Pendiente de registro]'
-  const footer = `
----
-Noira Webs — Cazamos negocios invisibles
-${direccion}
-noiramaster@gmail.com
-
-Si no quieres recibir más emails, responde a este correo con "BAJA" en el asunto.
-`
-  return cuerpoOriginal.replace(/\[DIRECCIÓN FÍSICA DE NOIRA\]/g, direccion) + footer
+function buildBody(cuerpoOriginal: string, idioma: string = 'es'): string {
+  const direccion = process.env.DIRECCION_FISICA || 'Ferrol, 15404, España'
+  const footer = idioma === 'fr'
+    ? `\n---\nNoira Webs — Nous chassons les commerces invisibles\n${direccion}\nnoiramaster@gmail.com\n\nSi vous ne souhaitez plus recevoir d'emails, répondez "BAJA" à cet email.\n`
+    : `\n---\nNoira Webs — Cazamos negocios invisibles\n${direccion}\nnoiramaster@gmail.com\n\nSi no quieres recibir más emails, responde a este correo con "BAJA" en el asunto.\n`
+  return cuerpoOriginal + footer
 }
 
-async function sendEmailDirectly(leadId: string, emailId: string, asunto: string, cuerpo: string): Promise<void> {
+async function sendEmailDirectly(leadId: string, emailId: string, asunto: string, cuerpo: string, idioma: string = 'es'): Promise<void> {
   const destinatario = process.env.GMAIL_USER || 'noiramaster@gmail.com'
 
   const transporter = getTransporter()
@@ -51,7 +46,7 @@ async function sendEmailDirectly(leadId: string, emailId: string, asunto: string
       from: '"Noira Webs" <noiramaster@gmail.com>',
       to: destinatario,
       subject: asunto,
-      text: buildBody(cuerpo),
+      text: buildBody(cuerpo, idioma),
     })
 
     const now = new Date().toISOString()
@@ -102,11 +97,14 @@ Genera un email corto y persuasivo para el dueño de "${lead.nombre_negocio}" ($
 El idioma debe ser ${lead.idioma === 'fr' ? 'francés' : 'español'}.
 
 Requisitos:
+- Asunto profesional y claro, sin sonar a vendedor agresivo
 - MÁXIMO 1-2 emojis en todo el email
+- Explica que ya tienen una web profesional creada y pueden verla gratis 7 días
+- Menciona claramente que después son 19€/mes para mantenerla activa, sin permanencia
 - Incluye este enlace a su web ya creada: ${webUrl}
 - Incluye este enlace a la agencia NOIRA: https://noira-demos.vercel.app
-- Incluye un texto de baja: "Si no quieres recibir más emails, responde BAJA"
-- Remitente identificado: "NOIRA — Cazamos negocios invisibles"
+- NO incluyas dirección física ni texto de baja — eso va en el pie automático
+- Remitente: "NOIRA — Cazamos negocios invisibles"
 - Tono cercano pero profesional
 - Extensión máxima: 150 palabras
 
@@ -135,41 +133,42 @@ Responde SOLO con JSON:
     console.log('  Using fallback copy')
 
     if (lead.idioma === 'fr') {
-      asunto = `${lead.nombre_negocio} sans site web ? Nous avons ce qu'il vous faut`
-      cuerpo = `Bonjour,
+      asunto = `Votre nouveau site web pour ${lead.nombre_negocio} est prêt`
+      cuerpo = `Bonjour ${lead.nombre_negocio},
 
-Nous sommes NOIRA, une agence qui aide les commerces locaux comme ${lead.nombre_negocio} à avoir une présence en ligne.
-
-Nous avons préparé un site web professionnel pour vous :
+Nous avons créé un site web professionnel pour votre commerce. Vous pouvez le voir ici :
 ${webUrl}
 
-C'est gratuit et sans engagement. Il vous suffit de nous dire si vous souhaitez le publier.
+Ce site est entièrement gratuit pendant 7 jours. Après cette période, il reste actif pour seulement 19€/mois (sans engagement, vous pouvez résilier quand vous voulez).
 
-Plus d'infos : https://noira-demos.vercel.app
+👉 Voir votre site : ${webUrl}
+👉 Activer votre abonnement dès maintenant : https://noira-demos.vercel.app
 
-[DIRECCIÓN FÍSICA DE NOIRA]
-Si vous ne souhaitez plus recevoir d'emails, répondez "BAJA" à cet email.
+Si vous avez la moindre question, répondez simplement à cet email.
 
-Cordialement,
-NOIRA`
+L'équipe NOIRA
+
+
+Plus d'infos : https://noira-demos.vercel.app`
     } else {
-      asunto = `¿${lead.nombre_negocio} sin web? Te tenemos cubierto`
-      cuerpo = `Hola,
+      asunto = `Tu nueva web para ${lead.nombre_negocio} ya está lista`
+      cuerpo = `Hola ${lead.nombre_negocio},
 
-Somos NOIRA, una agencia que ayuda a negocios locales como ${lead.nombre_negocio} a tener presencia online.
-
-Hemos preparado una web profesional para ti:
+Hemos creado una web profesional para tu negocio. Puedes verla aquí:
 ${webUrl}
 
-Es gratis y sin compromiso. Solo tienes que decirnos si quieres publicarla.
+Esta web es completamente gratis durante 7 días. Después, se mantiene activa por solo 19€/mes (sin permanencia, cancelas cuando quieras).
 
-Más info: https://noira-demos.vercel.app
+👉 Ver tu web: ${webUrl}
+👉 Activar tu suscripción ya: https://noira-demos.vercel.app
 
-[DIRECCIÓN FÍSICA DE NOIRA]
-Si no quieres recibir más emails, responde BAJA
+Si tienes cualquier duda, responde a este email.
 
 Un saludo,
-NOIRA`
+El equipo de NOIRA
+
+
+Más info: https://noira-demos.vercel.app`
     }
   }
 
@@ -205,6 +204,6 @@ NOIRA`
 
   // Send immediately if within limit
   if (canSend) {
-    await sendEmailDirectly(lead.id, emailId, asunto, cuerpo)
+    await sendEmailDirectly(lead.id, emailId, asunto, cuerpo, lead.idioma || 'es')
   }
 }

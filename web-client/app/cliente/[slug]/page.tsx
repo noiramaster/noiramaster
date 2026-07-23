@@ -10,25 +10,20 @@ function getSupabase() {
 
 interface PageProps { params: { slug: string } }
 
-const LANG = {
+const LANG: Record<string, Record<string, string>> = {
   es: {
     expired_title: 'Demo caducada',
     expired_desc: 'Esta web de demostración ya no está disponible. Si quieres seguir publicando tu web, puedes contratarla ahora.',
     expired_cta: 'Contratar web — 19€/mes',
     expired_note: 'Pago único mensual, cancelable cuando quieras.',
     pay_btn: 'Pagar con tarjeta',
-    loading: 'Preparando pago...',
     nav_whatsapp: 'WhatsApp',
-    nav_call: 'Llamar',
     nav_directions: 'Cómo llegar',
     services_title: 'Nuestros servicios',
     about_title: 'Sobre nosotros',
     footer: 'Web creada por NOIRA',
-    receiving_payment: 'Procesando pago...',
-    payment_success: '¡Pago recibido! Tu web ya está activa.',
-    payment_error: 'Error al procesar el pago.',
-    lang_es: 'ES',
-    lang_fr: 'FR',
+    demo_label: 'Demo — caduca el',
+    demo_no_date: '7 días de prueba',
   },
   fr: {
     expired_title: 'Démo expirée',
@@ -36,18 +31,13 @@ const LANG = {
     expired_cta: 'Souscrire — 19€/mois',
     expired_note: 'Paiement mensuel unique, annulable à tout moment.',
     pay_btn: 'Payer par carte',
-    loading: 'Préparation du paiement...',
     nav_whatsapp: 'WhatsApp',
-    nav_call: 'Appeler',
     nav_directions: 'Itinéraire',
     services_title: 'Nos services',
     about_title: 'À propos de nous',
     footer: 'Site web créé par NOIRA',
-    receiving_payment: 'Traitement du paiement...',
-    payment_success: 'Paiement reçu ! Votre site est maintenant actif.',
-    payment_error: 'Erreur lors du traitement du paiement.',
-    lang_es: 'ES',
-    lang_fr: 'FR',
+    demo_label: 'Démo — expire le',
+    demo_no_date: '7 jours d\'essai',
   },
 }
 
@@ -186,7 +176,7 @@ export default async function ClientPage({ params }: PageProps) {
       </nav>
 
       <div style={{ background: '#1A1A2E', borderBottom: '1px solid #6C4CE0', padding: '8px 24px', textAlign: 'center', fontSize: 12, color: '#9B84F0' }}>
-        Demo — {web.fecha_caducidad ? `caduca el ${new Date(web.fecha_caducidad).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'es-ES')}` : '7 días de prueba'}
+        {t.demo_label} {web.fecha_caducidad ? new Date(web.fecha_caducidad).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'es-ES') : t.demo_no_date}
       </div>
 
       <section style={{ padding: '80px 24px', textAlign: 'center', background: styles.heroBg }}>

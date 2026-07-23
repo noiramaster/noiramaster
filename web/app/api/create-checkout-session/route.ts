@@ -5,29 +5,52 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY || '')
 }
-const PRICE_ID = process.env.STRIPE_PRICE_ID || ''
-const DOMAIN = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://noira-smoky.vercel.app'
+
+function getSlug(web: any): string {
+  try {
+    const parts = (web.url_demo || '').split('/')
+    return parts[parts.length - 1] || ''
+  } catch {
+    return ''
+  }
+}
 
 export async function POST(req: Request) {
   try {
     const { webId } = await req.json()
-    if (!webId) return NextResponse.json({ error: 'webId required' }, { status: 400 })
+    if (!webId) return NextResponse.json({ error: 'Falta el identificador de la web' }, { status: 400 })
+
+    const priceId = process.env.STRIPE_PRICE_ID
+    if (!priceId) {
+      console.error('STRIPE_PRICE_ID no configurado')
+      return NextResponse.json({ error: 'Error de configuración del sistema' }, { status: 500 })
+    }
+
+    const secretKey = process.env.STRIPE_SECRET_KEY
+    if (!secretKey) {
+      console.error('STRIPE_SECRET_KEY no configurado')
+      return NextResponse.json({ error: 'Error de configuración del sistema' }, { status: 500 })
+    }
 
     const supabase = getSupabaseAdmin()
-    const { data: web } = await supabase.from('webs_generadas').select('*, leads(*)').eq('id', webId).single()
-    if (!web) return NextResponse.json({ error: 'Web not found' }, { status: 404 })
+    const { data: web, error: webError } = await supabase.from('webs_generadas').select('*, leads(*)').eq('id', webId).single()
+    if (webError || !web) return NextResponse.json({ error: 'Web no encontrada' }, { status: 404 })
+
+    const slug = getSlug(web)
+    const domain = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://noira-smoky.vercel.app'
 
     const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: PRICE_ID, quantity: 1 }],
-      metadata: { webId },
-      success_url: `${DOMAIN}/cliente/${web.leads?.nombre_negocio ? web.url_demo.split('/').pop() : ''}?payment=success`,
-      cancel_url: `${DOMAIN}/cliente/${web.url_demo.split('/').pop() || ''}?payment=cancelled`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { webId, slug, negocio: web.leads?.nombre_negocio || '' },
+      success_url: slug ? `${domain}/cliente/${slug}?payment=success` : `${domain}?payment=success`,
+      cancel_url: `${domain}${slug ? `/cliente/${slug}` : ''}?payment=cancelled`,
     })
 
     return NextResponse.json({ url: session.url })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error('Error creando sesión de pago:', err)
+    return NextResponse.json({ error: 'Error al preparar el pago. Inténtalo de nuevo.' }, { status: 500 })
   }
 }
