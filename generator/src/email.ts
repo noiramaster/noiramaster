@@ -101,10 +101,9 @@ El idioma debe ser ${lead.idioma === 'fr' ? 'francés' : 'español'}.
 Requisitos:
 - Asunto profesional y claro, sin sonar a vendedor agresivo
 - MÁXIMO 1-2 emojis en todo el email
-- Explica que ya tienen una web profesional creada y pueden verla gratis 7 días
-- Menciona claramente que después son 19€/mes para mantenerla activa, sin permanencia
-- Incluye este enlace a su web ya creada: ${webUrl}
-- Incluye este enlace a la agencia NOIRA: https://noira-demos.vercel.app
+- Invítalos a crear su web gratis en nuestra herramienta self-service: https://noira-smoky.vercel.app/app/self-service
+- Pueden elegir estilo, servicios y contenido ellos mismos con total libertad
+- Menciona que es gratis 7 días, luego 19€/mes sin permanencia
 - NO incluyas dirección física ni texto de baja — eso va en el pie automático
 - Remitente: "NOIRA — Cazamos negocios invisibles"
 - Tono cercano pero profesional
@@ -135,42 +134,38 @@ Responde SOLO con JSON:
     console.log('  Using fallback copy')
 
     if (lead.idioma === 'fr') {
-      asunto = `Votre nouveau site web pour ${lead.nombre_negocio} est prêt`
+      asunto = `Créez votre site web ${lead.nombre_negocio} en 2 minutes`
       cuerpo = `Bonjour ${lead.nombre_negocio},
 
-Nous avons créé un site web professionnel pour votre commerce. Vous pouvez le voir ici :
-${webUrl}
+Vous pouvez créer et voir votre site web ici gratuitement, en choisissant tout vous-même en toute liberté :
+https://noira-smoky.vercel.app/app/self-service
 
-Ce site est entièrement gratuit pendant 7 jours. Après cette période, il reste actif pour seulement 19€/mois (sans engagement, vous pouvez résilier quand vous voulez).
+Notre outil vous guide pas à pas : choisissez votre style, vos services, et obtenez un site professionnel en un clic.
 
-👉 Voir votre site : ${webUrl}
-👉 Activer votre abonnement dès maintenant : https://noira-demos.vercel.app
+👉 Créer votre site : https://noira-smoky.vercel.app/app/self-service
 
-Si vous avez la moindre question, répondez simplement à cet email.
+C'est entièrement gratuit pendant 7 jours, puis 19€/mois pour rester actif (sans engagement).
 
-L'équipe NOIRA
+Si vous avez la moindre question, répondez à cet email.
 
-
-Plus d'infos : https://noira-demos.vercel.app`
+L'équipe NOIRA`
     } else {
-      asunto = `Tu nueva web para ${lead.nombre_negocio} ya está lista`
+      asunto = `Crea tu web para ${lead.nombre_negocio} en 2 minutos`
       cuerpo = `Hola ${lead.nombre_negocio},
 
-Hemos creado una web profesional para tu negocio. Puedes verla aquí:
-${webUrl}
+Puedes crear y ver tu web aquí gratis, eligiendo todo tú con total libertad:
+https://noira-smoky.vercel.app/app/self-service
 
-Esta web es completamente gratis durante 7 días. Después, se mantiene activa por solo 19€/mes (sin permanencia, cancelas cuando quieras).
+Nuestra herramienta te guía paso a paso: elige tu estilo, tus servicios, y obtén una web profesional en un clic.
 
-👉 Ver tu web: ${webUrl}
-👉 Activar tu suscripción ya: https://noira-demos.vercel.app
+👉 Crear tu web: https://noira-smoky.vercel.app/app/self-service
+
+Es completamente gratis durante 7 días, luego 19€/mes para mantenerla activa (sin permanencia).
 
 Si tienes cualquier duda, responde a este email.
 
 Un saludo,
-El equipo de NOIRA
-
-
-Más info: https://noira-demos.vercel.app`
+El equipo de NOIRA`
     }
   }
 
