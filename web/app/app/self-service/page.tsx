@@ -65,31 +65,45 @@ function SelfServiceInner() {
   useEffect(() => {
     if (status === "loading") return
     if (!session) { setStep("login"); return }
-    fetch("/api/self-service/key").then(r => r.json()).then(d => {
-      setHasKey(d.hasKey)
-      setStep(d.hasKey ? "form" : "key")
-      if (d.hasKey) loadMyWebs()
-    })
+    fetch("/api/self-service/key").then(r => r.text()).then(text => {
+      try {
+        const d = JSON.parse(text)
+        setHasKey(d.hasKey)
+        setStep(d.hasKey ? "form" : "key")
+        if (d.hasKey) loadMyWebs()
+      } catch {
+        setStep("key")
+      }
+    }).catch(() => setStep("key"))
   }, [status, session])
 
   function loadMyWebs() {
-    fetch("/api/self-service/generate").then(r => r.json()).then(setMyWebs)
+    fetch("/api/self-service/generate").then(r => r.text()).then(text => {
+      try { setMyWebs(JSON.parse(text)) } catch {}
+    }).catch(() => {})
   }
 
   async function handleSaveKey() {
     setKeyError("")
     if (!apiKey.startsWith("gsk_")) { setKeyError("La clave debe empezar por gsk_"); return }
     setKeySaving(true)
-    const res = await fetch("/api/self-service/key", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ apiKey })
-    })
-    const data = await res.json()
-    setKeySaving(false)
-    if (!res.ok) { setKeyError(data.error); return }
-    setHasKey(true)
-    setStep("form")
-    loadMyWebs()
+    try {
+      const res = await fetch("/api/self-service/key", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey })
+      })
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error('Respuesta inválida del servidor: ' + text.substring(0, 100)) }
+      setKeySaving(false)
+      if (!res.ok) { setKeyError(data.error || 'Error del servidor'); return }
+      setHasKey(true)
+      setStep("form")
+      loadMyWebs()
+    } catch (err: any) {
+      setKeySaving(false)
+      setKeyError(err.message || 'Error al conectar con el servidor')
+    }
   }
 
   async function handleGenerate(e: React.FormEvent) {
@@ -97,17 +111,24 @@ function SelfServiceInner() {
     setGenerating(true)
     setGenError("")
     setRateLimit(null)
-    const res = await fetch("/api/self-service/generate", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    })
-    const data = await res.json()
-    setGenerating(false)
-    if (!res.ok) { setGenError(data.error); if (data.rateLimit) setRateLimit(data.rateLimit); return }
-    setResult(data)
-    setRateLimit(data.rateLimit)
-    setStep("done")
-    loadMyWebs()
+    try {
+      const res = await fetch("/api/self-service/generate", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      })
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error('Respuesta inválida del servidor: ' + text.substring(0, 100)) }
+      setGenerating(false)
+      if (!res.ok) { setGenError(data.error); if (data.rateLimit) setRateLimit(data.rateLimit); return }
+      setResult(data)
+      setRateLimit(data.rateLimit)
+      setStep("done")
+      loadMyWebs()
+    } catch (err: any) {
+      setGenerating(false)
+      setGenError(err.message || 'Error al conectar con el servidor')
+    }
   }
 
   function formatCountdown(expiresAt: string) {
