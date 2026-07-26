@@ -23,7 +23,7 @@ export async function queryOverpass(
   try {
     res = await fetch(OVERPASS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'noira-scraper/1.0' },
       body: new URLSearchParams({ data: query }),
       signal: controller.signal,
     })
