@@ -44,3 +44,5 @@ Thumbs.db
 # Build artifacts
 **/dist
 *.tsbuildinfo
+
+# Supabase access token (local only).env.supabase
