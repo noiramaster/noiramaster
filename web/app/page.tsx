@@ -161,7 +161,7 @@ export default function Home() {
 
       <main className="flex-1">
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#15131F_0%,_#0A0A0F_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#111111_0%,_#000000_70%)]" />
           <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16 py-20">
             <div className="radar-container shrink-0" role="img" aria-label="Escáner de negocios sin web">
               <div className="radar-circle" /><div className="radar-circle" /><div className="radar-circle" /><div className="radar-circle" />

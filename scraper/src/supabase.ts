@@ -16,11 +16,24 @@ export async function existsByPhone(telefono?: string): Promise<boolean> {
   return (data?.length ?? 0) > 0
 }
 
+async function existsByNameAndLocation(nombre: string, ubicacion: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('leads')
+    .select('id')
+    .eq('nombre_negocio', nombre)
+    .eq('ubicacion', ubicacion)
+    .limit(1)
+  return (data?.length ?? 0) > 0
+}
+
 export async function saveLead(lead: DiscoveredBusiness): Promise<boolean> {
   if (lead.telefono) {
     const exists = await existsByPhone(lead.telefono)
     if (exists) return false
   }
+
+  const nameMatch = await existsByNameAndLocation(lead.nombre_negocio, lead.ubicacion)
+  if (nameMatch) return false
 
   const { error } = await supabase.from('leads').insert({
     nombre_negocio: lead.nombre_negocio,

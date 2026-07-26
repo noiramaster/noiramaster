@@ -4,7 +4,7 @@ import { LeadData, GeneratedCopy } from './types'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
 export async function generateCopy(lead: LeadData): Promise<GeneratedCopy> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
   const prompt = `Eres un redactor profesional de webs para negocios locales.
 Genera contenido para la web de "${lead.nombre_negocio}", un negocio de tipo "${lead.categoria}" ubicado en "${lead.ubicacion}" (${lead.pais}).

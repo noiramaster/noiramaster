@@ -41,7 +41,7 @@ export async function queryOverpass(
   return elements
     .filter((el) => {
       const tags = el.tags || {}
-      return !tags.website && !tags.phone
+      return !tags.website
     })
     .map((el) => {
       const tags = el.tags || {}

@@ -175,10 +175,17 @@ Más info: https://noira-demos.vercel.app`
   // Check daily limit before sending
   let canSend = true
   try {
-    const { data: config } = await getDb().from('config_envio').select('limite_diario_actual, emails_enviados_hoy').eq('id', 1).single()
-    if (config && config.emails_enviados_hoy >= config.limite_diario_actual) {
-      console.log(`  ⚠ Daily limit reached (${config.emails_enviados_hoy}/${config.limite_diario_actual}). Saving as borrador.`)
-      canSend = false
+    const { data: config } = await getDb().from('config_envio').select('fecha_ultimo_reset, limite_diario_actual, emails_enviados_hoy').eq('id', 1).single()
+    if (config) {
+      const today = new Date().toISOString().split('T')[0]
+      if (config.fecha_ultimo_reset !== today) {
+        await getDb().from('config_envio').update({ emails_enviados_hoy: 0, fecha_ultimo_reset: today, updated_at: new Date().toISOString() }).eq('id', 1)
+        config.emails_enviados_hoy = 0
+      }
+      if (config.emails_enviados_hoy >= config.limite_diario_actual) {
+        console.log(`  ⚠ Daily limit reached (${config.emails_enviados_hoy}/${config.limite_diario_actual}). Saving as borrador.`)
+        canSend = false
+      }
     }
   } catch {
     canSend = false

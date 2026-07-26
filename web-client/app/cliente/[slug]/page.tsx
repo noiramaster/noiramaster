@@ -68,9 +68,9 @@ async function getLeadData(slug: string) {
 
 function getStyleForCategory(category: string) {
   const styles: Record<string, any> = {
-    restaurante: { bg: '#0A0A0F', text: '#F5F3FF', accent: '#E85D3A', border: '#2A2640', navBg: '#0A0A0F', heroBg: 'linear-gradient(135deg, #0A0A0F 0%, #1A0F0D 100%)', sectionBg: '#15131F', cardBg: '#1A181F' },
-    peluqueria: { bg: '#0A0A0F', text: '#F5F3FF', accent: '#D946EF', border: '#2A2640', navBg: '#0A0A0F', heroBg: 'linear-gradient(135deg, #0A0A0F 0%, #1A0D1A 100%)', sectionBg: '#15131F', cardBg: '#1A181F' },
-    generico: { bg: '#0A0A0F', text: '#F5F3FF', accent: '#6C4CE0', border: '#2A2640', navBg: '#0A0A0F', heroBg: 'linear-gradient(135deg, #0A0A0F 0%, #13101A 100%)', sectionBg: '#15131F', cardBg: '#1A181F' },
+    restaurante: { bg: '#000000', text: '#e0e0e0', accent: '#39ff14', border: '#222222', navBg: '#000000', heroBg: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)', sectionBg: '#111111', cardBg: '#111111' },
+    peluqueria: { bg: '#000000', text: '#e0e0e0', accent: '#39ff14', border: '#222222', navBg: '#000000', heroBg: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)', sectionBg: '#111111', cardBg: '#111111' },
+    generico: { bg: '#000000', text: '#e0e0e0', accent: '#39ff14', border: '#222222', navBg: '#000000', heroBg: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)', sectionBg: '#111111', cardBg: '#111111' },
   }
   return styles[category?.toLowerCase()] || styles.generico
 }
@@ -93,15 +93,15 @@ export default async function ClientPage({ params }: PageProps) {
     return (
       <html lang={lang}>
         <head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>NOIRA — {t.expired_title}</title></head>
-        <body style={{ margin: 0, background: '#0A0A0F', color: '#F5F3FF', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <body style={{ margin: 0, background: '#000000', color: '#e0e0e0', fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
           <div style={{ textAlign: 'center', maxWidth: 480, padding: 40 }}>
             <h1 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 32, fontWeight: 700, marginBottom: 16 }}>{t.expired_title}</h1>
-            <p style={{ color: '#8B85A8', lineHeight: 1.6, marginBottom: 24 }}>{t.expired_desc}</p>
-            <p style={{ color: '#6C4CE0', fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{t.expired_cta}</p>
-            <p style={{ color: '#8B85A8', fontSize: 13, marginBottom: 24 }}>{t.expired_note}</p>
+            <p style={{ color: '#666666', lineHeight: 1.6, marginBottom: 24 }}>{t.expired_desc}</p>
+            <p style={{ color: '#39ff14', fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{t.expired_cta}</p>
+            <p style={{ color: '#666666', fontSize: 13, marginBottom: 24 }}>{t.expired_note}</p>
             <form action="/api/create-checkout-session" method="POST" style={{ display: 'inline-block' }}>
               <input type="hidden" name="webId" value={web.id} />
-              <button type="submit" style={{ background: '#6C4CE0', color: '#fff', border: 'none', padding: '14px 32px', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>{t.pay_btn}</button>
+              <button type="submit" style={{ background: '#39ff14', color: '#000', border: 'none', padding: '14px 32px', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>{t.pay_btn}</button>
             </form>
           </div>
         </body>
@@ -175,7 +175,7 @@ export default async function ClientPage({ params }: PageProps) {
         </div>
       </nav>
 
-      <div style={{ background: '#1A1A2E', borderBottom: '1px solid #6C4CE0', padding: '8px 24px', textAlign: 'center', fontSize: 12, color: '#9B84F0' }}>
+      <div style={{ background: '#000', borderBottom: '1px solid #39ff14', padding: '8px 24px', textAlign: 'center', fontSize: 12, color: '#666' }}>
         {t.demo_label} {web.fecha_caducidad ? new Date(web.fecha_caducidad).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'es-ES') : t.demo_no_date}
       </div>
 
