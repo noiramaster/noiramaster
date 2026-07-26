@@ -62,6 +62,8 @@ function SelfServiceInner() {
   const [rateLimit, setRateLimit] = useState<any>(null)
   const [myWebs, setMyWebs] = useState<any[]>([])
 
+  function getMyWebs(): any[] { return Array.isArray(myWebs) ? myWebs : [] }
+
   useEffect(() => {
     if (status === "loading") return
     if (!session) { setStep("login"); return }
@@ -79,8 +81,11 @@ function SelfServiceInner() {
 
   function loadMyWebs() {
     fetch("/api/self-service/generate").then(r => r.text()).then(text => {
-      try { setMyWebs(JSON.parse(text)) } catch {}
-    }).catch(() => {})
+      try {
+        const data = JSON.parse(text)
+        setMyWebs(Array.isArray(data) ? data : [])
+      } catch { setMyWebs([]) }
+    }).catch(() => setMyWebs([]))
   }
 
   async function handleSaveKey() {
@@ -193,7 +198,7 @@ function SelfServiceInner() {
   }
 
   if (step === "form") {
-    const pendingWebs = myWebs.filter(w => w.estado_pago === 'demo' && new Date(w.fecha_caducidad) > new Date())
+    const pendingWebs = getMyWebs().filter(w => w.estado_pago === 'demo' && new Date(w.fecha_caducidad) > new Date())
     return (
       <div className="min-h-screen bg-black text-[#e0e0e0] p-6">
         <div className="max-w-lg mx-auto pt-8">

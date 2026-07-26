@@ -120,13 +120,21 @@ export async function GET() {
   if (!session?.user?.email) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const supabase = getDb()
-  const { data: usuario } = await supabase
+  let { data: usuario } = await supabase
     .from('usuarios_selfservice')
     .select('id')
     .eq('email', session.user.email)
     .maybeSingle()
 
-  if (!usuario) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+  if (!usuario) {
+    const { data: newUser } = await supabase
+      .from('usuarios_selfservice')
+      .insert({ google_id: session.user.email, email: session.user.email, nombre: session.user.name || '' })
+      .select('id')
+      .maybeSingle()
+    usuario = newUser
+    if (!usuario) return NextResponse.json([])
+  }
 
   const { data: webs } = await supabase
     .from('webs_selfservice')
