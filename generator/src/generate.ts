@@ -112,12 +112,14 @@ export async function generateWebForLead(lead: LeadData): Promise<GeneratedWeb |
   }
 
   // Advance lead to email_listo (same as old approve-web API did)
-  await getDb().from('leads').update({ estado: 'email_listo' }).eq('id', lead.id)
+  const { error: advErr } = await getDb().from('leads').update({ estado: 'email_listo' }).eq('id', lead.id)
+  if (advErr) console.error(`  ✗ Failed to advance lead ${lead.id}: ${advErr.message}`)
 
   if (data) {
     console.log(`  ✓ Web saved: ${url_demo}`)
     return data as GeneratedWeb
   }
 
+  console.log(`  ⚠ Web saved but no data returned from Supabase insert`)
   return { lead_id: lead.id, url_demo, estilo_aplicado, estado: 'aprobada' }
 }

@@ -41,7 +41,7 @@ async function main() {
       log(`✗ Google Maps verification failed: ${err}`)
     }
   } else {
-    log('Skipping Google verification — no businesses discovered.')
+    log('⚠ NO businesses discovered — all Overpass queries returned 0 or errored.')
   }
 
   const limited = verified.slice(0, MAX_LEADS_PER_RUN)
@@ -52,6 +52,9 @@ async function main() {
     log(`✗ Failed to save leads: ${err}`)
   }
 
+  if (saved === 0) {
+    log('⚠⚠⚠ WARNING: 0 new leads saved. Check Overpass/Google logs above.')
+  }
   log(`✅ Done. ${saved} new leads saved to Supabase.`)
 }
 

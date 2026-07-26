@@ -11,14 +11,25 @@ const supabase = createClient(
 async function main() {
   const mode = process.argv[2] || 'all'
 
-  const { data: leads } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('estado', 'nuevo')
-    .limit(5)
+  let leads: any[] | null
+  try {
+    const result = await supabase
+      .from('leads')
+      .select('*')
+      .eq('estado', 'nuevo')
+      .limit(5)
+    leads = result.data
+    if (result.error) {
+      console.error(`✗ Supabase query error: ${result.error.message}`)
+      return
+    }
+  } catch (err: any) {
+    console.error(`✗ Supabase connection error: ${err.message || err}`)
+    return
+  }
 
   if (!leads || leads.length === 0) {
-    console.log('No leads in "nuevo" state.')
+    console.log('⚠ No leads in "nuevo" state. Nothing to process.')
     return
   }
 
@@ -29,19 +40,21 @@ async function main() {
       if (mode === 'all' || mode === 'web') {
         const web = await generateWebForLead(lead)
         if (web) {
-          await supabase
+          const { error: updErr } = await supabase
             .from('leads')
             .update({ estado: 'web_generada' })
             .eq('id', lead.id)
+          if (updErr) console.error(`  ✗ Failed to update lead ${lead.id} to web_generada: ${updErr.message}`)
         }
       }
 
       if (mode === 'all' || mode === 'email') {
         await generateEmailForLead(lead)
-        await supabase
+        const { error: updErr } = await supabase
           .from('leads')
           .update({ estado: 'email_listo' })
           .eq('id', lead.id)
+        if (updErr) console.error(`  ✗ Failed to update lead ${lead.id} to email_listo: ${updErr.message}`)
       }
     } catch (err) {
       console.error(`✗ Lead ${lead.id} (${lead.nombre_negocio}) failed: ${err}`)

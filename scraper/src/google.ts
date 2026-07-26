@@ -64,7 +64,8 @@ async function checkGoogleMaps(
       GOOGLE_CACHE.set(cacheKey, result)
     }
     return result
-  } catch {
+  } catch (err: any) {
+    console.error(`  ⚠ Google Maps check failed for "${name}": ${err.message || err}`)
     return null
   } finally {
     await context.close()
@@ -87,6 +88,8 @@ export async function enrichWithGoogleData(
           lead.telefono = googleData.phone
         }
         enriched.push(lead)
+      } else {
+        console.log(`  ⚠ "${lead.nombre_negocio}" not found on Google Maps, skipping`)
       }
 
       await randomDelay()

@@ -63,7 +63,9 @@ async function sendEmailDirectly(leadId: string, emailId: string, asunto: string
 
     try {
       await getDb().rpc('incrementar_contador_envio')
-    } catch { }
+    } catch (counterErr: any) {
+      console.error(`  ⚠ Failed to increment email counter: ${counterErr.message || counterErr}`)
+    }
 
     console.log(`  ✓ Email SENT: "${asunto}" → ${destinatario}`)
   } catch (err: any) {
@@ -187,7 +189,8 @@ Más info: https://noira-demos.vercel.app`
         canSend = false
       }
     }
-  } catch {
+  } catch (limitErr: any) {
+    console.error(`  ⚠ Failed to check email limit: ${limitErr.message || limitErr}`)
     canSend = false
   }
 

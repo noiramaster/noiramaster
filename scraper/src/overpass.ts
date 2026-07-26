@@ -32,10 +32,17 @@ export async function queryOverpass(
   }
 
   if (!res.ok) {
-    throw new Error(`Overpass error: ${res.status} ${await res.text()}`)
+    const body = await res.text()
+    throw new Error(`Overpass error: HTTP ${res.status} — ${body.substring(0, 200)}`)
   }
 
-  const data: { elements: any[] } = await res.json()
+  let data: { elements: any[] }
+  try {
+    data = await res.json()
+  } catch (parseErr: any) {
+    const raw = await res.text()
+    throw new Error(`Overpass JSON parse error: ${parseErr.message}. Raw response (first 300 chars): ${raw.substring(0, 300)}`)
+  }
   const elements = data.elements
 
   return elements
