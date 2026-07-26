@@ -11,10 +11,12 @@ const LANG = {
     hero_desc: "Detectamos negocios locales sin web en España y Marruecos. Les construimos una presencia online profesional y los ponemos en el mapa. Sin que ellos levanten un dedo.",
     hero_cta_1: "Ver casos reales",
     hero_cta_2: "Recomendar un negocio",
+    hero_cta_3: "Crea tu web gratis",
     scroll_hint: "Descubre cómo",
     nav_1: "Cómo funciona",
     nav_2: "Casos",
     nav_3: "Contacto",
+    nav_4: "Crea tu web",
     how_title_1: "Cómo",
     how_title_2: "cazamos",
     how_title_3: " negocios",
@@ -56,10 +58,12 @@ const LANG = {
     hero_desc: "Nous détectons les commerces locaux sans site web en Espagne et au Maroc. Nous leur créons une présence en ligne professionnelle et les mettons sur la carte. Sans qu'ils lèvent le petit doigt.",
     hero_cta_1: "Voir des cas réels",
     hero_cta_2: "Recommander un commerce",
+    hero_cta_3: "Créez votre site",
     scroll_hint: "Découvrez comment",
     nav_1: "Fonctionnement",
     nav_2: "Cas",
     nav_3: "Contact",
+    nav_4: "Créez votre site",
     how_title_1: "Comment nous",
     how_title_2: "chassons",
     how_title_3: " les commerces",
@@ -150,6 +154,7 @@ export default function Home() {
               <a href="#como-funciona" className="hover:text-violeta transition-colors">{t.nav_1}</a>
               <a href="#casos" className="hover:text-violeta transition-colors">{t.nav_2}</a>
               <a href="#contacto" className="hover:text-violeta transition-colors">{t.nav_3}</a>
+              <a href="/app/self-service" className="text-violeta font-medium hover:opacity-80 transition-colors">{t.nav_4}</a>
             </nav>
             <div className="flex gap-1 text-xs border border-noir-border rounded-lg overflow-hidden">
               <button onClick={() => setLang("es")} className={`px-2 py-1 ${lang === "es" ? "bg-violeta text-white" : "text-texto-muted hover:text-white"} transition-colors`}>{t.lang_es}</button>
@@ -175,7 +180,8 @@ export default function Home() {
               </h1>
               <p className="text-texto-muted text-lg leading-relaxed mb-8">{t.hero_desc}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a href="#casos" className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-violeta text-white font-medium hover:bg-violeta/90 transition-colors">{t.hero_cta_1}</a>
+                <a href="/app/self-service" className="inline-flex items-center justify-center px-8 py-3 rounded-lg font-bold" style={{ background: '#39ff14', color: '#000' }}>{t.hero_cta_3}</a>
+                <a href="#casos" className="inline-flex items-center justify-center px-8 py-3 rounded-lg border border-noir-border text-texto-muted font-medium hover:border-violeta hover:text-violeta transition-colors">{t.hero_cta_1}</a>
                 <a href="#contacto" className="inline-flex items-center justify-center px-8 py-3 rounded-lg border border-noir-border text-texto-muted font-medium hover:border-violeta hover:text-violeta transition-colors">{t.hero_cta_2}</a>
               </div>
             </div>
