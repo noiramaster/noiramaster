@@ -16,7 +16,13 @@ async function POST(req: Request) {
   const validation = await validateGroqKey(apiKey)
   if (!validation.valid) return NextResponse.json({ error: validation.error }, { status: 400 })
 
-  const encrypted = encrypt(apiKey)
+  let encrypted: string
+  try {
+    encrypted = encrypt(apiKey)
+  } catch (cipherErr: any) {
+    console.error('[key/route] encrypt failed:', cipherErr?.stack || cipherErr?.message || cipherErr)
+    return NextResponse.json({ error: 'Error interno de cifrado. Contacta al administrador.' }, { status: 500 })
+  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -27,7 +33,10 @@ async function POST(req: Request) {
     .update({ groq_key_cifrada: encrypted, updated_at: new Date().toISOString() })
     .eq('email', session.user.email)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[key/route] supabase update failed:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

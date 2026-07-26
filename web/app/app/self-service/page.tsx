@@ -102,6 +102,7 @@ function SelfServiceInner() {
       loadMyWebs()
     } catch (err: any) {
       setKeySaving(false)
+      console.error('[handleSaveKey]', err?.stack || err?.message || JSON.stringify(err))
       setKeyError(err.message || 'Error al conectar con el servidor')
     }
   }
