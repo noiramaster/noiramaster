@@ -82,8 +82,6 @@ export async function POST(req: Request) {
   if (!copy) return NextResponse.json({ error: 'Error generando contenido' }, { status: 500 })
 
   const style = STYLES[categoria] || STYLES.generico
-  const slug = `${slugify(nombre)}-${Date.now().toString(36)}`
-  const url_demo = `https://noira-demos.vercel.app/self/${slug}`
 
   const pagina_html = buildHtmlPage(copy, nombre, telefono || '', categoria, style, idioma || 'es')
   const estilo_aplicado = JSON.stringify({ style: style.name, accentColor: style.accentColor, heroGradient: style.heroGradient, copy })
@@ -97,7 +95,7 @@ export async function POST(req: Request) {
     descripcion: descripcion || null,
     telefono: telefono || null,
     idioma: idioma || 'es',
-    url_demo,
+    url_demo: '',
     estilo_aplicado,
     pagina_html,
     fecha_caducidad: expiresAt,
@@ -105,6 +103,12 @@ export async function POST(req: Request) {
   }).select().single()
 
   if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 })
+
+  const url_demo = `https://noira-demos.vercel.app/demo/${web.id}`
+
+  if (web.url_demo !== url_demo) {
+    await supabase.from('webs_selfservice').update({ url_demo }).eq('id', web.id)
+  }
 
   return NextResponse.json({
     ok: true,

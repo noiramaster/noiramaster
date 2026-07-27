@@ -28,14 +28,34 @@ async function POST(req: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   )
-  const { error } = await supabase
+  const { data: existing } = await supabase
     .from('usuarios_selfservice')
-    .update({ groq_key_cifrada: encrypted, updated_at: new Date().toISOString() })
+    .select('id')
     .eq('email', session.user.email)
+    .maybeSingle()
 
-  if (error) {
-    console.error('[key/route] supabase update failed:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  let dbError: any
+  if (existing) {
+    const { error } = await supabase
+      .from('usuarios_selfservice')
+      .update({ groq_key_cifrada: encrypted, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+    dbError = error
+  } else {
+    const { error } = await supabase
+      .from('usuarios_selfservice')
+      .insert({
+        google_id: session.user.email,
+        email: session.user.email,
+        nombre: session.user.name || '',
+        groq_key_cifrada: encrypted,
+      })
+    dbError = error
+  }
+
+  if (dbError) {
+    console.error('[key/route] db error:', dbError)
+    return NextResponse.json({ error: dbError.message }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })
