@@ -17,22 +17,34 @@ export async function validateGroqKey(apiKey: string): Promise<{ valid: boolean;
   }
 }
 
+export interface WebGenInput {
+  nombre: string
+  categoria: string
+  descripcion?: string
+  telefono?: string
+  direccion?: string
+  horario?: string
+  servicios?: string[]
+  idioma: string
+}
+
 export async function generateWebCopy(
   apiKey: string,
-  nombre: string,
-  categoria: string,
-  descripcion: string,
-  idioma: string
+  input: WebGenInput
 ): Promise<{ copy: any; rateLimit?: GroqRateLimit; error?: string }> {
-  const lang = idioma === 'fr' ? 'francés' : 'español'
-  const prompt = `Genera contenido para la web de "${nombre}", un negocio de tipo "${categoria}" en ${lang}.
-${descripcion ? `Descripción: ${descripcion}` : ''}
+  const lang = input.idioma === 'fr' ? 'francés' : 'español'
+  const serviciosText = input.servicios?.length ? `Servicios/productos:\n${input.servicios.map(s => `- ${s}`).join('\n')}` : ''
+  const prompt = `Genera contenido para la web de "${input.nombre}", un negocio de tipo "${input.categoria}" en ${lang}.
+${input.descripcion ? `Descripción: ${input.descripcion}` : ''}
+${input.direccion ? `Dirección: ${input.direccion}` : ''}
+${input.horario ? `Horario: ${input.horario}` : ''}
+${serviciosText}
 No uses emojis. Responde SOLO con JSON:
 {
   "hero_title": "Título impactante (máx 8 palabras)",
   "hero_subtitle": "Frase descriptiva (máx 15 palabras)",
-  "services": ["Servicio 1", "Servicio 2", "Servicio 3", "Servicio 4"],
-  "about": "Párrafo de 30-40 palabras sobre el negocio",
+  "services": ${input.servicios?.length ? `["${input.servicios.join('", "')}"]` : '["Servicio 1", "Servicio 2", "Servicio 3", "Servicio 4"]'},
+  "about": "Párrafo de 30-40 palabras sobre el negocio usando los datos proporcionados",
   "cta": "Llamada a la acción (máx 5 palabras)"
 }`
 

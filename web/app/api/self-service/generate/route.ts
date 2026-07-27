@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   const session = await getServerSession()
   if (!session?.user?.email) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { nombre, categoria, descripcion, telefono, idioma } = await req.json()
+  const { nombre, categoria, descripcion, telefono, direccion, horario, servicios, idioma } = await req.json()
   if (!nombre || !categoria) return NextResponse.json({ error: 'Nombre y categoría son obligatorios' }, { status: 400 })
 
   const supabase = getDb()
@@ -77,14 +77,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error descifrando la clave. Conéctala de nuevo.' }, { status: 500 })
   }
 
-  const { copy, rateLimit, error: genError } = await generateWebCopy(apiKey, nombre, categoria, descripcion || '', idioma || 'es')
+  const { copy, rateLimit, error: genError } = await generateWebCopy(apiKey, { nombre, categoria, descripcion, telefono, direccion, horario, servicios, idioma: idioma || 'es' })
   if (genError) return NextResponse.json({ error: genError, rateLimit }, { status: 400 })
   if (!copy) return NextResponse.json({ error: 'Error generando contenido' }, { status: 500 })
 
   const style = STYLES[categoria] || STYLES.generico
 
   const pagina_html = buildHtmlPage(copy, nombre, telefono || '', categoria, style, idioma || 'es')
-  const estilo_aplicado = JSON.stringify({ style: style.name, accentColor: style.accentColor, heroGradient: style.heroGradient, copy })
+  const estilo_aplicado = JSON.stringify({ style: style.name, accentColor: style.accentColor, heroGradient: style.heroGradient, copy, direccion, horario, servicios })
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
@@ -94,7 +94,6 @@ export async function POST(req: Request) {
     categoria,
     descripcion: descripcion || null,
     telefono: telefono || null,
-    idioma: idioma || 'es',
     url_demo: '',
     estilo_aplicado,
     pagina_html,

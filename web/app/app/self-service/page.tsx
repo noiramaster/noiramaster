@@ -30,12 +30,15 @@ function SelfServiceInner() {
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
   const langCodes = LANGS.map(l => l.code)
-  const [step, setStep] = useState<"loading" | "login" | "key" | "form" | "done">("loading")
+  const [step, setStep] = useState<"loading" | "login" | "key" | "maps" | "manual" | "review" | "form" | "done">("loading")
   const [hasKey, setHasKey] = useState(false)
   const [apiKey, setApiKey] = useState("")
   const [keyError, setKeyError] = useState("")
   const [keySaving, setKeySaving] = useState(false)
-  const [form, setForm] = useState({ nombre: "", categoria: "generico", descripcion: "", telefono: "", idiomas: ["es"] })
+  const [mapsUrl, setMapsUrl] = useState("")
+  const [mapsError, setMapsError] = useState("")
+  const [mapsLoading, setMapsLoading] = useState(false)
+  const [form, setForm] = useState({ nombre: "", categoria: "generico", descripcion: "", telefono: "", direccion: "", horario: "", servicios: [] as string[], idiomas: ["es"] })
 
   useEffect(() => {
     const saved = localStorage.getItem("noira_ss_lang")
@@ -72,7 +75,7 @@ function SelfServiceInner() {
         const d = JSON.parse(text)
         setHasKey(d.hasKey)
         setStep(d.hasKey ? "form" : "key")
-        if (d.hasKey) loadMyWebs()
+        if (d.hasKey) { loadMyWebs(); setStep("maps") } else setStep("key")
       } catch {
         setStep("key")
       }
@@ -103,7 +106,7 @@ function SelfServiceInner() {
       setKeySaving(false)
       if (!res.ok) { setKeyError(data.error || 'Error del servidor'); return }
       setHasKey(true)
-      setStep("form")
+      setStep("maps")
       loadMyWebs()
     } catch (err: any) {
       setKeySaving(false)
@@ -111,6 +114,39 @@ function SelfServiceInner() {
       setKeyError(err.message || 'Error al conectar con el servidor')
     }
   }
+
+  async function handleExtractMaps() {
+    setMapsError("")
+    if (!mapsUrl.trim()) { setMapsError("Pega el enlace de Google Maps"); return }
+    setMapsLoading(true)
+    try {
+      const res = await fetch("/api/self-service/extract-maps", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mapsUrl })
+      })
+      const text = await res.text()
+      let data
+      try { data = JSON.parse(text) } catch { throw new Error('Error del servidor: ' + text.substring(0, 100)) }
+      if (!res.ok) { setMapsLoading(false); setMapsError(data.error || 'No se pudo extraer'); return }
+      setForm({
+        nombre: data.nombre_negocio || "",
+        categoria: data.categoria || "generico",
+        descripcion: data.descripcion || "",
+        telefono: data.telefono || "",
+        direccion: data.direccion || "",
+        horario: data.horario || "",
+        servicios: data.servicios || [],
+        idiomas: ["es"],
+      })
+      setMapsLoading(false)
+      setStep("review")
+    } catch (err: any) {
+      setMapsLoading(false)
+      setMapsError(err.message || 'Error al conectar')
+    }
+  }
+
+  function skipToManual() { setStep("manual") }
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
@@ -120,7 +156,7 @@ function SelfServiceInner() {
     try {
       const res = await fetch("/api/self-service/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, idioma: form.idiomas[0] || 'es' })
       })
       const text = await res.text()
       let data
@@ -197,7 +233,80 @@ function SelfServiceInner() {
     )
   }
 
-  if (step === "form") {
+  if (step === "maps") {
+    return (
+      <div className="min-h-screen bg-black text-[#e0e0e0] p-6">
+        <div className="max-w-lg mx-auto pt-8">
+          <h1 className="font-heading text-2xl font-bold mb-6" style={{ color: '#39ff14' }}>{t.form_title}</h1>
+
+          <div className="p-4 rounded-lg border border-[#222] bg-[#111] mb-6">
+            <h2 className="font-semibold mb-2">Pega el link de Google Maps</h2>
+            <p className="text-xs text-[#666] mb-3">Busca tu negocio en Google Maps → Compartir → Copiar enlace</p>
+            <input type="text" value={mapsUrl} onChange={e => setMapsUrl(e.target.value)}
+              placeholder="https://maps.google.com/maps/place/Tu+Negocio..."
+              className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors font-mono text-sm"
+            />
+            {mapsError && <p className="text-red-400 text-sm mt-2">{mapsError}</p>}
+            <button onClick={handleExtractMaps} disabled={mapsLoading || !mapsUrl.trim()}
+              className="mt-4 w-full py-3 px-8 rounded-lg font-medium transition-colors disabled:opacity-50"
+              style={{ background: '#39ff14', color: '#000' }}>
+              {mapsLoading ? "Extrayendo datos..." : "Extraer datos automáticamente"}
+            </button>
+          </div>
+
+          <button onClick={skipToManual}
+            className="w-full py-3 px-4 text-sm text-[#666] hover:text-[#e0e0e0] transition-colors">
+            o rellénalo manualmente
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === "review") {
+    return (
+      <div className="min-h-screen bg-black text-[#e0e0e0] p-6">
+        <div className="max-w-lg mx-auto pt-8">
+          <h1 className="font-heading text-2xl font-bold mb-6" style={{ color: '#39ff14' }}>Revisa los datos</h1>
+          <p className="text-[#666] text-sm mb-6">Estos son los datos que encontramos. Puedes editarlos antes de generar.</p>
+
+          <div className="space-y-4">
+            <div><label className="text-xs text-[#666] block mb-1">Nombre *</label>
+              <input type="text" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] focus:border-[#39ff14] transition-colors" /></div>
+            <div><label className="text-xs text-[#666] block mb-1">Categoría</label>
+              <select value={form.categoria} onChange={e => setForm({...form, categoria: e.target.value})}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] focus:border-[#39ff14] transition-colors">
+                <option value="restaurante">Restaurante</option><option value="peluqueria">Peluquería</option>
+                <option value="abogado">Abogado</option><option value="gimnasio">Gimnasio</option>
+                <option value="taller">Taller</option><option value="clinica">Clínica</option>
+                <option value="tienda">Tienda</option><option value="generico">Otro</option>
+              </select></div>
+            <div><label className="text-xs text-[#666] block mb-1">Dirección</label>
+              <input type="text" value={form.direccion} onChange={e => setForm({...form, direccion: e.target.value})}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] focus:border-[#39ff14] transition-colors" /></div>
+            <div><label className="text-xs text-[#666] block mb-1">Teléfono</label>
+              <input type="text" value={form.telefono} onChange={e => setForm({...form, telefono: e.target.value})}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] focus:border-[#39ff14] transition-colors" /></div>
+          </div>
+
+          <div className="flex gap-3 mt-8">
+            <button onClick={() => setStep("manual")}
+              className="flex-1 py-3 px-4 rounded-lg border border-[#222] text-[#666] hover:text-[#e0e0e0] transition-colors text-sm">
+              Editar más datos
+            </button>
+            <button onClick={() => setStep("form")}
+              className="flex-1 py-3 px-4 rounded-lg font-medium transition-colors"
+              style={{ background: '#39ff14', color: '#000' }}>
+              Generar web con estos datos
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === "manual") {
     const pendingWebs = getMyWebs().filter(w => w.estado_pago === 'demo' && new Date(w.fecha_caducidad) > new Date())
     return (
       <div className="min-h-screen bg-black text-[#e0e0e0] p-6">
@@ -269,16 +378,34 @@ function SelfServiceInner() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#666] mb-1">{t.desc_label}</label>
-              <textarea value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} rows={3}
-                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors resize-none"
-                placeholder={t.desc_ph} />
+              <label className="block text-sm font-medium text-[#666] mb-1">Dirección</label>
+              <input type="text" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors"
+                placeholder="Calle Mayor 15, Madrid" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#666] mb-1">{t.phone_label}</label>
               <input type="text" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors"
                 placeholder={t.phone_ph} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#666] mb-1">Horario de apertura</label>
+              <input type="text" value={form.horario} onChange={e => setForm({ ...form, horario: e.target.value })}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors"
+                placeholder="Lun-Sáb 9:00-20:00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#666] mb-1">Servicios / productos (1 por línea)</label>
+              <textarea value={form.servicios.join('\n')} onChange={e => setForm({ ...form, servicios: e.target.value.split('\n').filter(s => s.trim()) })}
+                rows={4} className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors resize-none font-mono text-sm"
+                placeholder={"Corte de pelo - 15€\nTinte - 30€\nPeinado - 20€"} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#666] mb-1">{t.desc_label}</label>
+              <textarea value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} rows={3}
+                className="w-full px-4 py-3 rounded-lg bg-black border border-[#222] text-[#e0e0e0] placeholder:text-[#666] focus:border-[#39ff14] transition-colors resize-none"
+                placeholder={t.desc_ph} />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#666] mb-1">{t.lang_label}</label>
