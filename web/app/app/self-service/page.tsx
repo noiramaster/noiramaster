@@ -164,7 +164,7 @@ function SelfServiceInner() {
     try {
       const res = await fetch("/api/self-service/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, idioma: form.idiomas[0] || 'es' })
+        body: JSON.stringify({ ...form, idiomas: form.idiomas.length ? form.idiomas : ['es'] })
       })
       clearInterval(timerId)
       const text = await res.text()

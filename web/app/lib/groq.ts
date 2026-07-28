@@ -25,27 +25,33 @@ export interface WebGenInput {
   direccion?: string
   horario?: string
   servicios?: string[]
-  idioma: string
+  idiomas: string[]
+}
+
+const LANG_NAMES: Record<string, string> = {
+  es: 'español', en: 'inglés', fr: 'francés', pt: 'portugués',
+  de: 'alemán', it: 'italiano', ar: 'árabe'
 }
 
 export async function generateWebCopy(
   apiKey: string,
   input: WebGenInput
-): Promise<{ copy: any; rateLimit?: GroqRateLimit; error?: string }> {
-  const lang = input.idioma === 'fr' ? 'francés' : 'español'
-  const serviciosText = input.servicios?.length ? `Servicios/productos:\n${input.servicios.map(s => `- ${s}`).join('\n')}` : ''
-  const prompt = `Genera contenido para la web de "${input.nombre}", un negocio de tipo "${input.categoria}" en ${lang}.
+): Promise<{ copy: Record<string, any> | null; rateLimit?: GroqRateLimit; error?: string }> {
+  const serviciosText = input.servicios?.length ? `Servicios:\n${input.servicios.map(s => `- ${s}`).join('\n')}` : ''
+  const langs = input.idiomas.length ? input.idiomas : ['es']
+
+  const prompt = `Eres un traductor profesional. Genera contenido para la web de "${input.nombre}" (${input.categoria}).
 ${input.descripcion ? `Descripción: ${input.descripcion}` : ''}
 ${input.direccion ? `Dirección: ${input.direccion}` : ''}
 ${input.horario ? `Horario: ${input.horario}` : ''}
 ${serviciosText}
-No uses emojis. Responde SOLO con JSON:
+
+Genera el contenido en los siguientes idiomas: ${langs.map(l => LANG_NAMES[l] || l).join(', ')}.
+Responde SOLO con un JSON donde cada clave es el código del idioma y el valor es el contenido en ese idioma:
 {
-  "hero_title": "Título impactante (máx 8 palabras)",
-  "hero_subtitle": "Frase descriptiva (máx 15 palabras)",
-  "services": ${input.servicios?.length ? `["${input.servicios.join('", "')}"]` : '["Servicio 1", "Servicio 2", "Servicio 3", "Servicio 4"]'},
-  "about": "Párrafo de 30-40 palabras sobre el negocio usando los datos proporcionados",
-  "cta": "Llamada a la acción (máx 5 palabras)"
+  "es": { "hero_title": "...", "hero_subtitle": "...", "services": [...], "about": "...", "cta": "..." },
+  "en": { ... },
+  ...
 }`
 
   try {
@@ -59,7 +65,7 @@ No uses emojis. Responde SOLO con JSON:
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 2000
       })
     })
 
@@ -82,7 +88,15 @@ No uses emojis. Responde SOLO con JSON:
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return { copy: null, rateLimit, error: 'Respuesta inesperada de Groq. Intenta de nuevo.' }
 
-    return { copy: JSON.parse(jsonMatch[0]), rateLimit }
+    const parsed = JSON.parse(jsonMatch[0])
+
+    // Fill missing languages with Spanish fallback
+    const copy: Record<string, any> = {}
+    for (const l of langs) {
+      copy[l] = parsed[l] || parsed.es || { hero_title: input.nombre, hero_subtitle: '', services: input.servicios || ['Servicio 1', 'Servicio 2', 'Servicio 3', 'Servicio 4'], about: input.descripcion || '', cta: 'Contáctanos' }
+    }
+
+    return { copy, rateLimit }
   } catch (err: any) {
     return { copy: null, error: `Error de conexión: ${err.message}` }
   }
