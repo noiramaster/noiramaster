@@ -60,6 +60,8 @@ function SelfServiceInner() {
 
   const t = T[lang as keyof typeof T] || T.en
   const [generating, setGenerating] = useState(false)
+  const [genStartTime, setGenStartTime] = useState(0)
+  const [genElapsed, setGenElapsed] = useState("")
   const [result, setResult] = useState<any>(null)
   const [genError, setGenError] = useState("")
   const [rateLimit, setRateLimit] = useState<any>(null)
@@ -151,13 +153,20 @@ function SelfServiceInner() {
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
     setGenerating(true)
+    const startTime = Date.now()
+    setGenElapsed("0s")
     setGenError("")
     setRateLimit(null)
+    const timerId = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      setGenElapsed(elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed/60)}m ${elapsed%60}s`)
+    }, 500)
     try {
       const res = await fetch("/api/self-service/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, idioma: form.idiomas[0] || 'es' })
       })
+      clearInterval(timerId)
       const text = await res.text()
       let data
       try { data = JSON.parse(text) } catch { throw new Error('Respuesta inválida del servidor: ' + text.substring(0, 100)) }
@@ -168,6 +177,7 @@ function SelfServiceInner() {
       setStep("done")
       loadMyWebs()
     } catch (err: any) {
+      clearInterval(timerId)
       setGenerating(false)
       setGenError(err.message || 'Error al conectar con el servidor')
     }
@@ -295,7 +305,7 @@ function SelfServiceInner() {
               className="flex-1 py-3 px-4 rounded-lg border border-[#222] text-[#666] hover:text-[#e0e0e0] transition-colors text-sm">
               Editar más datos
             </button>
-            <button onClick={() => setStep("form")}
+            <button onClick={() => setStep("manual")}
               className="flex-1 py-3 px-4 rounded-lg font-medium transition-colors"
               style={{ background: '#39ff14', color: '#000' }}>
               Generar web con estos datos
@@ -335,11 +345,7 @@ function SelfServiceInner() {
             </div>
           </div>
 
-          {rateLimit && (
-            <div className="mb-4 p-3 rounded-lg border border-[#222] bg-[#111] text-sm text-center" style={{ color: '#39ff14' }}>
-              {t.remaining.replace("{n}", String(rateLimit.remaining))}
-            </div>
-          )}
+          {/* Rate limit hidden — Groq free tier is effectively unlimited */}
 
           {pendingWebs.length > 0 && (
             <div className="mb-6 p-4 rounded-lg border border-[#39ff14]/30 bg-[#111]">
@@ -430,9 +436,11 @@ function SelfServiceInner() {
             </div>
             {genError && <p className="text-red-400 text-sm text-center">{genError}</p>}
             <button type="submit" disabled={generating}
-              className="w-full py-3 px-8 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="w-full py-3 px-8 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: '#39ff14', color: '#000' }}>
-              {generating ? t.generating : t.submit}
+              {generating ? (
+                <><span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> {t.generating} ({genElapsed})</>
+              ) : t.submit}
             </button>
           </form>
         </div>
@@ -460,12 +468,6 @@ function SelfServiceInner() {
               <span className="text-[#666]">{t.status}</span>
               <span style={{ color: '#39ff14' }}>{t.demo} — {formatCountdown(result.expiraEn)}</span>
             </div>
-            {rateLimit && (
-              <div className="flex items-center justify-between">
-                <span className="text-[#666]">{t.remaining_groq}</span>
-                <span style={{ color: '#39ff14' }}>{rateLimit.remaining}</span>
-              </div>
-            )}
           </div>
           <div className="mt-8 space-y-3">
             <button
