@@ -60,7 +60,7 @@ function SelfServiceInner() {
 
   const t = T[lang as keyof typeof T] || T.en
   const [generating, setGenerating] = useState(false)
-  const [genStartTime, setGenStartTime] = useState(0)
+  const [genPhase, setGenPhase] = useState(0)
   const [genElapsed, setGenElapsed] = useState("")
   const [result, setResult] = useState<any>(null)
   const [genError, setGenError] = useState("")
@@ -150,23 +150,43 @@ function SelfServiceInner() {
 
   function skipToManual() { setStep("manual") }
 
+  const GEN_PHASES = [
+    t.generating || 'Generando...',
+    'Analizando tu negocio...',
+    'Escribiendo textos...',
+    'Aplicando estilo...',
+    'Publicando...',
+  ]
+
+  const MAPS_PHASES = [
+    'Conectando con Google Maps...',
+    'Leyendo información del negocio...',
+    'Descargando fotos...',
+    'Casi listo...',
+  ]
+
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault()
     setGenerating(true)
-    const startTime = Date.now()
+    setGenPhase(1)
     setGenElapsed("0s")
     setGenError("")
     setRateLimit(null)
+    const startTime = Date.now()
     const timerId = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       setGenElapsed(elapsed < 60 ? `${elapsed}s` : `${Math.floor(elapsed/60)}m ${elapsed%60}s`)
     }, 500)
+    const phaseTimer = setInterval(() => {
+      setGenPhase(p => Math.min(p + 1, GEN_PHASES.length - 1))
+    }, 3000)
     try {
       const res = await fetch("/api/self-service/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, idiomas: form.idiomas.length ? form.idiomas : ['es'] })
       })
       clearInterval(timerId)
+      clearInterval(phaseTimer)
       const text = await res.text()
       let data
       try { data = JSON.parse(text) } catch { throw new Error('Respuesta inválida del servidor: ' + text.substring(0, 100)) }
@@ -178,6 +198,7 @@ function SelfServiceInner() {
       loadMyWebs()
     } catch (err: any) {
       clearInterval(timerId)
+      clearInterval(phaseTimer)
       setGenerating(false)
       setGenError(err.message || 'Error al conectar con el servidor')
     }
@@ -435,13 +456,33 @@ function SelfServiceInner() {
               </div>
             </div>
             {genError && <p className="text-red-400 text-sm text-center">{genError}</p>}
-            <button type="submit" disabled={generating}
-              className="w-full py-3 px-8 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: '#39ff14', color: '#000' }}>
-              {generating ? (
-                <><span className="inline-block w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span> {t.generating} ({genElapsed})</>
-              ) : t.submit}
-            </button>
+            {generating ? (
+              <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="relative w-24 h-24 mb-6">
+                  <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#222" strokeWidth="6"/>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#39ff14" strokeWidth="6"
+                      strokeDasharray={`${2 * Math.PI * 42}`} strokeDashoffset={`${2 * Math.PI * 42 * (1 - Math.min(genPhase / (GEN_PHASES.length - 1), 0.95))}`}
+                      strokeLinecap="round" className="transition-all duration-700"/>
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-mono text-[#39ff14]">{genElapsed}</span>
+                  </div>
+                </div>
+                <div className="text-center max-w-xs">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="inline-block w-2 h-2 bg-[#39ff14] rounded-full animate-pulse"></span>
+                    <span className="text-sm text-[#e0e0e0]">{GEN_PHASES[genPhase]}</span>
+                  </div>
+                  <p className="text-xs text-[#666]">{t.generating}</p>
+                </div>
+              </div>
+            ) : (
+              <button type="submit" className="w-full py-3 px-8 rounded-lg font-medium transition-colors"
+                style={{ background: '#39ff14', color: '#000' }}>
+                {t.submit}
+              </button>
+            )}
           </form>
         </div>
       </div>
