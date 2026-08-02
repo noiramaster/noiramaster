@@ -31,11 +31,21 @@ async function main() {
 
   log(`Total discovered without website: ${allDiscovered.length}`)
 
+  const seen = new Set<string>()
+  const unique = allDiscovered.filter((lead) => {
+    const key = `${lead.nombre_negocio.toLowerCase()}|${lead.ubicacion.toLowerCase()}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+  log(`After in-memory dedup: ${unique.length}`)
+
   let verified: DiscoveredBusiness[] = []
-  if (allDiscovered.length > 0) {
-    log('Verifying on Google Maps...')
+  const toEnrich = unique.slice(0, MAX_LEADS_PER_RUN)
+  if (toEnrich.length > 0) {
+    log(`Verifying ${toEnrich.length} on Google Maps...`)
     try {
-      verified = await enrichWithGoogleData(allDiscovered)
+      verified = await enrichWithGoogleData(toEnrich)
       log(`Verified on Google Maps: ${verified.length}`)
     } catch (err) {
       log(`✗ Google Maps verification failed: ${err}`)

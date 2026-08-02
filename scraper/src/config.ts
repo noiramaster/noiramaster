@@ -50,7 +50,7 @@ export const CATEGORIES: CategoryConfig[] = [
   },
   {
     name: 'genérico',
-    osmTags: ['"shop"="*"', '"amenity"="*"'],
+    osmTags: ['"shop"~".*"', '"amenity"~".*"'],
     googleCategory: 'local business',
   },
 ]

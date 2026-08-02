@@ -12,14 +12,14 @@ function getDb() {
 }
 
 const STYLES: Record<string, any> = {
-  restaurante: { name: 'fuego', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  peluqueria: { name: 'rosa', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  abogado: { name: 'acero', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  gimnasio: { name: 'verde', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  taller: { name: 'ambar', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  clinica: { name: 'cian', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  tienda: { name: 'violeta', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
-  generico: { name: 'noira', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0a0a0a 100%)' },
+  restaurante: { name: 'fuego', accentColor: '#ff6b35', heroGradient: 'linear-gradient(135deg, #2b0d04 0%, #6b2410 55%, #3a1205 100%)' },
+  peluqueria: { name: 'rosa', accentColor: '#ff4fa3', heroGradient: 'linear-gradient(135deg, #20061a 0%, #4d1236 55%, #2a0a21 100%)' },
+  abogado: { name: 'acero', accentColor: '#4f8cff', heroGradient: 'linear-gradient(135deg, #050a1c 0%, #122a5c 55%, #081027 100%)' },
+  gimnasio: { name: 'energia', accentColor: '#ffd60a', heroGradient: 'linear-gradient(135deg, #141400 0%, #3d3d00 55%, #1a1a00 100%)' },
+  taller: { name: 'ambar', accentColor: '#ffb020', heroGradient: 'linear-gradient(135deg, #1c1105 0%, #4a2c0a 55%, #241505 100%)' },
+  clinica: { name: 'cian', accentColor: '#22d3ee', heroGradient: 'linear-gradient(135deg, #02141b 0%, #0a3442 55%, #031923 100%)' },
+  tienda: { name: 'violeta', accentColor: '#b45cff', heroGradient: 'linear-gradient(135deg, #130524 0%, #371366 55%, #18092e 100%)' },
+  generico: { name: 'noira', accentColor: '#39ff14', heroGradient: 'linear-gradient(135deg, #000000 0%, #0d1a00 55%, #000000 100%)' },
 }
 
 function slugify(text: string): string {

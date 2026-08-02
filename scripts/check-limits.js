@@ -37,24 +37,63 @@ async function fetch(url, options = {}) {
 
 async function checkGitHubActions() {
   if (!GITHUB_TOKEN || !GITHUB_REPO) return { ok: true, msg: 'GITHUB_TOKEN not set, skipping' }
+  const now = new Date()
+  const monthStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+  let minutesUsed = 0
+
+  // Método 1: endpoint oficial de usage (requiere admin; suele dar 403 con GITHUB_TOKEN)
   try {
     const data = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/usage`, {
       headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'User-Agent': 'noira-limits' }
     })
-    const minutesUsed = data?.billable?.UBUNTU?.total_ms
+    minutesUsed = data?.billable?.UBUNTU?.total_ms
       ? Math.round(data.billable.UBUNTU.total_ms / 60000)
       : 0
-    const ratio = minutesUsed / LIMITS.GITHUB_ACTIONS_MINUTES_MONTH
-    if (ratio >= LIMITS.GITHUB_ACTIONS_CRITICAL_AT) {
-      return { ok: false, level: 'critical', msg: `GitHub Actions: ${minutesUsed}/${LIMITS.GITHUB_ACTIONS_MINUTES_MONTH} min (${Math.round(ratio*100)}%) — PAUSING` }
-    }
-    if (ratio >= LIMITS.GITHUB_ACTIONS_WARN_AT) {
-      return { ok: true, level: 'warn', msg: `GitHub Actions: ${minutesUsed}/${LIMITS.GITHUB_ACTIONS_MINUTES_MONTH} min (${Math.round(ratio*100)}%) — near limit` }
-    }
-    return { ok: true, msg: `GitHub Actions: ${minutesUsed} min used this month` }
   } catch (err) {
-    return { ok: true, msg: `GitHub Actions check failed: ${err.message}` }
+    console.log(`  (usage endpoint falló: ${err.message}, usando fallback)`)
   }
+
+  // Método 2 (fallback): sumar run_duration_ms de las runs de este mes
+  // (requiere solo permisos de lectura de Actions, que GITHUB_TOKEN sí tiene)
+  if (!minutesUsed) {
+    try {
+      let page = 1
+      const nowMs = Date.now()
+      while (page <= 5) {
+        const data = await fetch(
+          `https://api.github.com/repos/${GITHUB_REPO}/actions/runs?per_page=100&page=${page}`,
+          { headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'User-Agent': 'noira-limits' } }
+        )
+        const runs = Array.isArray(data?.workflow_runs) ? data.workflow_runs : []
+        if (runs.length === 0) break
+        for (const run of runs) {
+          const created = Date.parse(run.created_at || '')
+          if (!created || created < monthStart) { page = 99; break }
+          let durationMs = run.run_duration_ms || 0
+          if (!durationMs && run.status === 'completed') {
+            const finished = Date.parse(run.updated_at || '')
+            if (finished > created) durationMs = finished - created
+          }
+          if (durationMs) minutesUsed += durationMs / 60000
+        }
+        if (runs.length < 100) break
+        page++
+      }
+      minutesUsed = Math.round(minutesUsed)
+      console.log(`  (fallback: ${minutesUsed} min calculados de las runs del mes)`)
+    } catch (err) {
+      return { ok: true, msg: `GitHub Actions check failed: ${err.message}` }
+    }
+  }
+
+  const ratio = minutesUsed / LIMITS.GITHUB_ACTIONS_MINUTES_MONTH
+  if (ratio >= LIMITS.GITHUB_ACTIONS_CRITICAL_AT) {
+    return { ok: false, level: 'critical', msg: `GitHub Actions: ${minutesUsed}/${LIMITS.GITHUB_ACTIONS_MINUTES_MONTH} min (${Math.round(ratio*100)}%) — PAUSING` }
+  }
+  if (ratio >= LIMITS.GITHUB_ACTIONS_WARN_AT) {
+    return { ok: true, level: 'warn', msg: `GitHub Actions: ${minutesUsed}/${LIMITS.GITHUB_ACTIONS_MINUTES_MONTH} min (${Math.round(ratio*100)}%) — near limit` }
+  }
+  return { ok: true, msg: `GitHub Actions: ${minutesUsed} min used this month` }
 }
 
 async function checkSupabase() {
