@@ -54,7 +54,12 @@ async function main() {
     log('⚠ NO businesses discovered — all Overpass queries returned 0 or errored.')
   }
 
-  const limited = verified.slice(0, MAX_LEADS_PER_RUN)
+  const enrichedKeys = new Set(verified.map((l) => `${l.nombre_negocio.toLowerCase()}|${l.ubicacion.toLowerCase()}`))
+  const unverified = toEnrich.filter((l) => !enrichedKeys.has(`${l.nombre_negocio.toLowerCase()}|${l.ubicacion.toLowerCase()}`))
+  if (unverified.length > 0) {
+    log(`⚠ ${unverified.length} leads not verified on Google (saving without enrichment)`)
+  }
+  const limited = [...verified, ...unverified].slice(0, MAX_LEADS_PER_RUN)
   let saved = 0
   try {
     saved = await saveLeads(limited)
