@@ -1,7 +1,7 @@
 import { CITIES, CATEGORIES, MAX_LEADS_PER_RUN } from './config'
 import { queryOverpass } from './overpass'
 import { enrichWithGoogleData } from './google'
-import { saveLeads } from './supabase'
+import { saveLeads, getExistingKeys } from './supabase'
 import { DiscoveredBusiness } from './types'
 
 function log(msg: string) {
@@ -40,8 +40,17 @@ async function main() {
   })
   log(`After in-memory dedup: ${unique.length}`)
 
+  const existing = await getExistingKeys()
+  const fresh = unique.filter((lead) => {
+    const key = `${lead.nombre_negocio.toLowerCase()}|${lead.ubicacion.toLowerCase()}`
+    if (existing.nameLocation.has(key)) return false
+    if (lead.telefono && existing.phones.has(lead.telefono)) return false
+    return true
+  })
+  log(`After DB dedup (not yet saved): ${fresh.length}`)
+
   let verified: DiscoveredBusiness[] = []
-  const toEnrich = unique.slice(0, MAX_LEADS_PER_RUN)
+  const toEnrich = fresh.slice(0, MAX_LEADS_PER_RUN)
   if (toEnrich.length > 0) {
     log(`Verifying ${toEnrich.length} on Google Maps...`)
     try {

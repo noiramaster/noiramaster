@@ -65,3 +65,28 @@ export async function saveLeads(leads: DiscoveredBusiness[]): Promise<number> {
   console.log(`\nSaved ${saved}/${leads.length} leads`)
   return saved
 }
+
+export async function getExistingKeys(): Promise<{ nameLocation: Set<string>; phones: Set<string> }> {
+  const nameLocation = new Set<string>()
+  const phones = new Set<string>()
+  const PAGE_SIZE = 1000
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('nombre_negocio, ubicacion, telefono')
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) {
+      console.error('Error fetching existing leads:', error.message)
+      break
+    }
+    if (!data || data.length === 0) break
+    for (const row of data) {
+      nameLocation.add(`${row.nombre_negocio?.toLowerCase()}|${row.ubicacion?.toLowerCase()}`)
+      if (row.telefono) phones.add(row.telefono)
+    }
+    from += data.length
+    if (data.length < PAGE_SIZE) break
+  }
+  return { nameLocation, phones }
+}
